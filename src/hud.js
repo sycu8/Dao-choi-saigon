@@ -5,6 +5,7 @@ export const setWeatherLabel = (text) => ($('weather').textContent = text);
 export const setFlyLabel = (flying) => ($('fly').textContent = flying ? '🛬 Hạ cánh' : '🚀 Bay');
 export const setFps = (fps) => ($('fps').textContent = Math.round(fps) + ' FPS');
 export const setQualityLabel = (name) => ($('quality').value = name);
+export const setMuteLabel = (muted) => ($('sound').textContent = muted ? '🔇 Tắt tiếng' : '🔊 Âm thanh');
 
 const last = {};
 function set(id, text) {
@@ -21,7 +22,8 @@ export function updateHud({ speed, altitude, place, trafficLabel, clock }) {
   set('clock', '🕒 ' + clock);
 }
 
-export function bindButtons({ onFly, onWeather, onCamera, onCar, onReset, onTime, onQuality }) {
+export function bindButtons({ onFly, onWeather, onCamera, onCar, onReset, onTime, onQuality, onMute }) {
+  $('sound').onclick = onMute;
   $('fly').onclick = onFly;
   $('mfly').onclick = onFly;
   $('rain').onclick = onWeather;

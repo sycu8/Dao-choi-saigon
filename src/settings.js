@@ -1,9 +1,9 @@
 const STORAGE_KEY = 'xebay.quality';
 
 export const QUALITY = {
-  low: { label: 'Thấp', pixelRatio: 1, anisotropy: 1, shadows: false, shadowSize: 0, post: false, smaa: false, water: false, waterRes: 0, trafficShare: 0.5, treeShare: 0.45 },
-  medium: { label: 'Trung bình', pixelRatio: 1.25, anisotropy: 4, shadows: true, shadowSize: 1024, post: true, smaa: true, water: true, waterRes: 256, trafficShare: 0.8, treeShare: 0.75 },
-  high: { label: 'Cao', pixelRatio: 1.75, anisotropy: 8, shadows: true, shadowSize: 2048, post: true, smaa: true, water: true, waterRes: 512, trafficShare: 1, treeShare: 1 },
+  low: { label: 'Thấp', pixelRatio: 1, anisotropy: 1, shadows: false, shadowSize: 0, post: false, smaa: false, water: false, waterRes: 0, trafficShare: 0.5, treeShare: 0.45, rainDrops: 1800, streetLights: 0, headlights: 1, particles: 0.4 },
+  medium: { label: 'Trung bình', pixelRatio: 1.25, anisotropy: 4, shadows: true, shadowSize: 1024, post: true, smaa: true, water: true, waterRes: 256, trafficShare: 0.8, treeShare: 0.75, rainDrops: 4500, streetLights: 3, headlights: 2, particles: 0.75 },
+  high: { label: 'Cao', pixelRatio: 1.75, anisotropy: 8, shadows: true, shadowSize: 2048, post: true, smaa: true, water: true, waterRes: 512, trafficShare: 1, treeShare: 1, rainDrops: 9000, streetLights: 6, headlights: 2, particles: 1 },
 };
 
 export const isMobile = () => matchMedia('(pointer: coarse)').matches || innerWidth < 760;

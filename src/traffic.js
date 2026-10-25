@@ -132,3 +132,14 @@ export function updateTraffic(dt, t, slowFactor) {
   }
   for (const m of [carMesh, carLights, bikeMesh, bikeLights]) m.instanceMatrix.needsUpdate = true;
 }
+
+// Picks a nearby AI vehicle to honk; returns stereo pan and volume relative to the listener, or null.
+export function pickHonk(listener, heading) {
+  const nearby = traffic.filter((v) => v.index < (v.bike ? bikeMesh : carMesh).count && vehiclePosition(v, pos).distanceTo(listener) < 70);
+  if (!nearby.length) return null;
+  const v = nearby[Math.floor(Math.random() * nearby.length)];
+  vehiclePosition(v, pos).sub(listener);
+  const dist = pos.length();
+  const right = Math.cos(heading) * pos.x - Math.sin(heading) * pos.z;
+  return { pan: Math.max(-1, Math.min(1, right / Math.max(dist, 1))), volume: 1 - dist / 80 };
+}

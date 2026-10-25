@@ -12,6 +12,7 @@ const fogOvercast = new THREE.Color('#8e9aa3');
 const sunWarm = new THREE.Color('#ffb070');
 const sunWhite = new THREE.Color('#fff1dc');
 const moonColor = new THREE.Color('#9fb6ff');
+const flashColor = new THREE.Color('#dfe6ff');
 
 const startHour = parseFloat(new URLSearchParams(location.search).get('hour'));
 
@@ -167,6 +168,7 @@ export function updateSky(dt, camera, focus, weatherMix) {
   const fog = sky.fogColor.copy(fogNight).lerp(fogDay, sky.daylight).lerp(fogDusk, dusk * 0.7);
   tmp.copy(fogOvercast).multiplyScalar(0.12 + 0.88 * sky.daylight);
   fog.lerp(tmp, cloud * 0.85);
+  if (weatherMix.flash) fog.lerp(flashColor, weatherMix.flash * 0.45);
   scene.fog.color.copy(fog);
   scene.fog.far = weatherMix.fogFar;
   scene.fog.near = Math.min(120, weatherMix.fogFar * 0.15);
@@ -187,6 +189,7 @@ export function updateSky(dt, camera, focus, weatherMix) {
   }
   hemi.intensity = (0.18 + 0.62 * sky.daylight) * (1 - cloud * 0.3) * (lowShading ? 1.7 : 1);
   hemi.color.copy(fog).lerp(tmp.set(0xdcefff), 0.5);
+  hemi.intensity += (weatherMix.flash || 0) * 2.5;
   scene.environmentIntensity = (0.1 + 0.38 * sky.daylight) * (1 - cloud * 0.35);
   renderer.toneMappingExposure = 0.68 + night * 0.2;
 }
