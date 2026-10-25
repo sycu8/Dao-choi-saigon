@@ -13,32 +13,49 @@
 <link rel="icon" href="data:,">
 <style>
 *{box-sizing:border-box}
+:root{
+  --hud-gap:8px;
+  --hud-margin:16px;
+  --hud-radius:16px;
+  --hud-pad:14px;
+  --hud-control:44px;
+  --hud-stick:120px;
+  --hud-btn:52px;
+  --hud-actions:calc(var(--hud-btn) * 2 + var(--hud-gap));
+  --hud-map:176px;
+  --hud-col:min(264px,calc(50% - 140px));
+  --hud-stat:min(192px,calc(50% - 168px));
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px)
+}
 html,body{height:100%;height:-webkit-fill-available;height:100dvh;touch-action:none;overscroll-behavior:none}
 body{margin:0;min-height:100%;min-height:-webkit-fill-available;min-height:100dvh;background:#101923;color:#fff;font:14px system-ui,Arial;overflow:hidden}
 canvas{display:block;touch-action:none;width:100%;height:100%;height:100dvh}
 html:fullscreen,html:-webkit-full-screen{height:100dvh;background:#101923}
-#hud{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);pointer-events:none}
-header{position:absolute;top:16px;left:18px;background:#081a2bd9;padding:14px 18px;border:1px solid #ffffff26;border-radius:16px;backdrop-filter:blur(12px)}
+#hud{position:fixed;top:var(--safe-top);right:var(--safe-right);bottom:var(--safe-bottom);left:var(--safe-left);pointer-events:none}
+header{position:absolute;top:var(--hud-margin);left:var(--hud-margin);background:#081a2bd9;padding:var(--hud-pad) calc(var(--hud-pad) + 4px);border:1px solid #ffffff26;border-radius:var(--hud-radius);backdrop-filter:blur(12px)}
 h1{font-size:19px;margin:0 0 3px}
 small{color:#a8c5d5}
-.stat{position:absolute;top:16px;right:16px;text-align:right;background:#081a2bd9;padding:14px;border-radius:16px}
+.stat{position:absolute;top:var(--hud-margin);right:var(--hud-margin);text-align:right;background:#081a2bd9;padding:var(--hud-pad);border-radius:var(--hud-radius)}
 .speed{font-size:32px;font-weight:800}
 .fps{font-size:11px;color:#8fb3c6;margin-top:2px}
 .q{display:block;margin-top:8px;font-size:12px}
 .q select{padding:5px;margin-left:4px}
-#panel{position:absolute;bottom:20px;left:20px;pointer-events:auto;background:#091c2ce8;padding:15px;border-radius:17px;width:min(360px,calc(100vw - 40px));border:1px solid #ffffff26}
-select,button{background:#193d51;color:#fff;border:1px solid #4b7186;border-radius:9px;padding:9px;font:inherit;cursor:pointer}
+#panel{position:absolute;bottom:var(--hud-margin);left:var(--hud-margin);pointer-events:auto;background:#091c2ce8;padding:var(--hud-pad);border-radius:var(--hud-radius);width:min(360px,calc(100vw - var(--hud-margin) * 2));border:1px solid #ffffff26}
+select,button{background:#193d51;color:#fff;border:1px solid #4b7186;border-radius:var(--hud-radius);padding:9px;font:inherit;cursor:pointer}
 button:hover{background:#29617a}
-.buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.buttons{display:flex;gap:var(--hud-gap);flex-wrap:wrap;margin-top:var(--hud-gap)}
 .hint{font-size:12px;color:#b7d3e1;line-height:1.7;margin-top:8px}
-#toast{position:absolute;top:118px;left:50%;transform:translateX(-50%);background:#102f43dd;padding:10px 15px;border-radius:20px;white-space:nowrap}
-#minimap{position:absolute;top:118px;left:18px;width:170px;height:170px;border-radius:50%;background:#0b1a24aa;box-shadow:0 4px 18px #0007}
+#toast{position:absolute;top:128px;left:50%;transform:translateX(-50%);background:#102f43dd;padding:10px 15px;border-radius:var(--hud-radius);white-space:nowrap}
+#minimap{position:absolute;top:128px;left:var(--hud-margin);width:var(--hud-map);height:var(--hud-map);border-radius:50%;background:#0b1a24aa;box-shadow:0 4px 18px #0007}
 .money{margin-top:4px;font-weight:700;color:#ffe08a}
 .energy{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:6px}
 .bar{width:110px;height:9px;border-radius:5px;background:#ffffff22;overflow:hidden}
 .bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#35e07a,#9cff6a);transition:width .2s}
 .bar i.low{background:linear-gradient(90deg,#ff4b3a,#ffb340)}
-#mission{position:absolute;top:16px;left:50%;transform:translateX(-50%);min-width:280px;max-width:420px;background:#081a2be6;border:1px solid #ffcc3366;border-radius:16px;padding:10px 16px;text-align:center;display:none}
+#mission{position:absolute;top:var(--hud-margin);left:50%;transform:translateX(-50%);min-width:280px;max-width:420px;background:#081a2be6;border:1px solid #ffcc3366;border-radius:var(--hud-radius);padding:10px 16px;text-align:center;display:none}
 #mission.on{display:block}
 #mtitle{font-weight:800;color:#ffcc33}
 #mtext{font-size:13px;margin:3px 0 6px;color:#e3f1f8}
@@ -83,8 +100,8 @@ button:hover{background:#29617a}
 }
 #panel,.pcard,#controlsHint,#touchFlow,#iosHint{touch-action:pan-y}
 #touchStack,#touchFlow,#topCluster{display:contents}
-#controlBar{position:absolute;z-index:8;left:50%;bottom:12px;transform:translateX(-50%);display:flex;flex-wrap:nowrap;gap:8px;max-width:calc(100% - 16px);pointer-events:auto}
-#controlBar button{min-width:44px;min-height:44px;padding:8px 12px;background:rgba(23,56,74,.5);border-color:rgba(255,255,255,.35);white-space:nowrap}
+#controlBar{position:absolute;z-index:8;left:50%;bottom:var(--hud-margin);transform:translateX(-50%);display:flex;flex-wrap:nowrap;gap:var(--hud-gap);max-width:calc(100% - var(--hud-margin) * 2);pointer-events:auto}
+#controlBar button{min-width:var(--hud-control);min-height:var(--hud-control);padding:8px 12px;border-radius:var(--hud-radius);background:rgba(23,56,74,.5);border-color:rgba(255,255,255,.35);white-space:nowrap}
 #controlBar #hudToggle,#controlBar #controlsHintOpen{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;padding:0}
 #hudToggle{position:relative;font-size:20px;line-height:1}
 #hudToggle.is-minimal::after{content:"";position:absolute;left:8px;right:8px;top:50%;height:2px;background:#fff;transform:rotate(-32deg);pointer-events:none}
@@ -93,19 +110,19 @@ button:hover{background:#29617a}
 html[data-fullscreen="1"] #fullscreenToggle .enter{display:none}
 html[data-fullscreen="1"] #fullscreenToggle .exit{display:block}
 #fullscreenToggle svg{display:block}
-#controlsHint{display:none;position:absolute;z-index:9;left:50%;bottom:64px;transform:translateX(-50%);width:min(480px,calc(100% - 48px));align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(8,26,43,.78);border:1px solid rgba(255,255,255,.28);pointer-events:auto;backdrop-filter:blur(10px)}
+#controlsHint{display:none;position:absolute;z-index:9;left:50%;bottom:calc(var(--hud-margin) + var(--hud-control) + var(--hud-gap));transform:translateX(-50%);width:min(480px,calc(100% - var(--hud-margin) * 4));align-items:center;gap:10px;padding:10px 12px;border-radius:var(--hud-radius);background:rgba(8,26,43,.78);border:1px solid rgba(255,255,255,.28);pointer-events:auto;backdrop-filter:blur(10px)}
 #controlsHint.on{display:flex}
 #controlsHint p{margin:0;font-size:13px;line-height:1.45;color:#e7f4fb}
 #controlsHintClose,#iosHintClose{min-width:44px;min-height:44px;background:rgba(23,61,81,.72)}
-#iosHint{display:none;z-index:9;align-items:center;gap:10px;width:min(340px,calc(100% - 24px));padding:8px 10px 8px 12px;border-radius:14px;background:rgba(8,26,43,.9);border:1px solid rgba(255,255,255,.28);pointer-events:auto}
+#iosHint{display:none;z-index:9;align-items:center;gap:10px;width:min(340px,calc(100% - 24px));padding:8px 10px 8px 12px;border-radius:var(--hud-radius);background:rgba(8,26,43,.9);border:1px solid rgba(255,255,255,.28);pointer-events:auto}
 #iosHint.on{display:flex;position:absolute;top:60px;left:50%;transform:translateX(-50%)}
 #iosHint p{margin:0;font-size:13px;line-height:1.35}
-#rotateHint{display:none;position:absolute;z-index:6;left:50%;top:46%;transform:translate(-50%,-50%);max-width:min(280px,78vw);text-align:center;padding:12px 14px;border-radius:16px;background:rgba(8,26,43,.5);border:1px solid rgba(255,255,255,.28);pointer-events:none}
+#rotateHint{display:none;position:absolute;z-index:6;left:50%;top:46%;transform:translate(-50%,-50%);max-width:min(280px,78vw);text-align:center;padding:12px 14px;border-radius:var(--hud-radius);background:rgba(8,26,43,.5);border:1px solid rgba(255,255,255,.28);pointer-events:none}
 #touch{display:none;position:absolute;inset:0;z-index:7;pointer-events:none}
-#stick{position:absolute;left:12px;bottom:12px;width:120px;height:120px;border-radius:50%;background:rgba(23,56,74,.42);border:2px solid rgba(255,255,255,.38);touch-action:none;pointer-events:auto}
+#stick{position:absolute;left:var(--hud-margin);bottom:var(--hud-margin);width:var(--hud-stick);height:var(--hud-stick);border-radius:50%;background:rgba(23,56,74,.42);border:2px solid rgba(255,255,255,.38);touch-action:none;pointer-events:auto}
 #stickKnob{position:absolute;left:34px;top:34px;width:52px;height:52px;border-radius:50%;background:rgba(232,246,255,.62);border:1px solid rgba(255,255,255,.75);pointer-events:none}
-#touchActions{position:absolute;right:12px;bottom:12px;z-index:2;display:grid;grid-template-columns:repeat(2,52px);grid-auto-rows:52px;gap:8px;touch-action:none;pointer-events:none}
-#touchActions button{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;min-width:52px;min-height:52px;padding:0;font-size:22px;line-height:1;background:rgba(23,56,74,.45);border-color:rgba(255,255,255,.35);touch-action:none;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+#touchActions{position:absolute;right:var(--hud-margin);bottom:var(--hud-margin);z-index:2;display:grid;grid-template-columns:repeat(2,var(--hud-btn));grid-auto-rows:var(--hud-btn);gap:var(--hud-gap);touch-action:none;pointer-events:none}
+#touchActions button{display:inline-flex;align-items:center;justify-content:center;width:var(--hud-btn);height:var(--hud-btn);min-width:var(--hud-btn);min-height:var(--hud-btn);padding:0;border-radius:var(--hud-radius);font-size:22px;line-height:1;background:rgba(23,56,74,.45);border-color:rgba(255,255,255,.35);touch-action:none;pointer-events:auto;-webkit-tap-highlight-color:transparent}
 #touchActions [data-need]{display:none}
 html[data-flying="1"] #touchActions [data-need="flying"]{display:inline-flex}
 html[data-flying="1"][data-stunt="1"] #touchActions [data-need="stunt"]{display:inline-flex}
@@ -116,6 +133,7 @@ html[data-flying="1"] #mfly .air{display:inline}
 #touch,#stick,#touchActions,#touchActions button,#controlBar button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 html[data-controls="keyboard"] canvas{cursor:grab}
 html[data-controls="keyboard"].looking canvas{cursor:grabbing}
+html[data-controls="touch"]{--hud-margin:8px;--hud-pad:8px;--hud-map:96px}
 html[data-controls="touch"] #touch{display:block}
 html[data-controls="touch"] #fullscreenToggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;padding:0}
 html[data-controls="touch"] .hint,html[data-controls="touch"] .desk{display:none}
@@ -164,10 +182,11 @@ html[data-hud="minimal"] #controlsHint.on{display:flex}
 html[data-hud="minimal"] .stat{padding:8px 10px}
 html[data-hud="minimal"] .speed{font-size:22px}
 @media (orientation:portrait){
+  html[data-controls="touch"]{--hud-map:112px}
   html[data-controls="touch"] #hud{padding-bottom:300px}
-  html[data-controls="touch"] #touchStack{display:flex;flex-direction:column;gap:8px;height:100%;max-height:100%;min-height:0;padding:8px 8px 0;overflow:hidden;pointer-events:none}
-  html[data-controls="touch"] #touchFlow{display:flex;flex-direction:column;gap:8px;flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;pointer-events:auto}
-  html[data-controls="touch"] #topCluster{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
+  html[data-controls="touch"] #touchStack{display:flex;flex-direction:column;gap:var(--hud-gap);height:100%;max-height:100%;min-height:0;padding:var(--hud-margin) var(--hud-margin) 0;overflow:hidden;pointer-events:none}
+  html[data-controls="touch"] #touchFlow{display:flex;flex-direction:column;gap:var(--hud-gap);flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;pointer-events:auto}
+  html[data-controls="touch"] #topCluster{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--hud-gap);min-width:0}
   html[data-controls="touch"] #controlBar{position:relative;top:auto;right:auto;bottom:auto;left:auto;transform:none;align-self:center;flex:0 0 auto;z-index:8}
   html[data-controls="touch"] header,
   html[data-controls="touch"] .stat,
@@ -177,36 +196,48 @@ html[data-hud="minimal"] .speed{font-size:22px}
   html[data-controls="touch"] #panel,
   html[data-controls="touch"] #iosHint,
   html[data-controls="touch"] #iosHint.on{position:relative;top:auto;right:auto;bottom:auto;left:auto;transform:none;margin:0}
-  html[data-controls="touch"] header{flex:1 1 auto;min-width:0;max-width:58%;padding:8px 10px}
-  html[data-controls="touch"] .stat{flex:0 1 42%;max-width:42%;padding:6px 8px;text-align:right}
+  html[data-controls="touch"] header{flex:1 1 auto;min-width:0;max-width:58%;padding:var(--hud-pad) 10px}
+  html[data-controls="touch"] .stat{flex:0 1 42%;max-width:42%;padding:6px var(--hud-pad);text-align:right}
   html[data-controls="touch"] #controlsHint,
   html[data-controls="touch"] #controlsHint.on{width:auto;max-width:none}
   html[data-controls="touch"] #iosHint.on{width:auto;max-width:none}
   html[data-controls="touch"] #toast{max-width:none;white-space:normal;text-align:center}
   html[data-controls="touch"] #panel{flex:1 1 auto;min-height:0;width:min(220px,100%);max-height:none;align-self:flex-start;overflow:auto}
   html[data-controls="touch"] #mission.on{position:relative;top:auto;right:auto;bottom:auto;left:auto;transform:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;max-height:88px;overflow:auto;z-index:3}
-  html[data-controls="touch"] #rotateHint{display:block;top:auto;bottom:212px;transform:translateX(-50%);max-width:min(260px,calc(100% - 24px))}
-  html[data-controls="touch"] #minimap{width:56px;height:56px;top:auto;left:8px;bottom:140px}
+  html[data-controls="touch"] #rotateHint{display:block;top:auto;bottom:212px;transform:translateX(-50%);max-width:min(260px,calc(100% - var(--hud-margin) * 3))}
+  html[data-controls="touch"] #minimap{width:var(--hud-map);height:var(--hud-map);top:auto;left:calc(var(--hud-margin) + var(--hud-stick) + var(--hud-gap));bottom:var(--hud-margin)}
 }
 @media (orientation:landscape){
-  html[data-controls="touch"] #controlBar{top:8px;bottom:auto;z-index:8}
-  html[data-controls="touch"] header{top:8px;left:8px;right:auto;bottom:auto;width:min(248px,calc(50% - 140px));max-width:min(248px,calc(50% - 140px));max-height:none;height:auto;padding:8px 10px;overflow:visible}
+  /* WebKit still paints display:none descendants of display:contents, so the touch landscape wrappers have to be real boxes or minimal mode leaves the vehicle panel on screen. */
+  html[data-controls="touch"] #touchStack,
+  html[data-controls="touch"] #touchFlow,
+  html[data-controls="touch"] #topCluster{display:block;position:absolute;inset:0;margin:0;pointer-events:none}
+  html[data-controls="touch"] #controlBar{top:var(--hud-margin);bottom:auto;z-index:8}
+  html[data-controls="touch"] header{top:var(--hud-margin);left:var(--hud-margin);right:auto;bottom:auto;width:var(--hud-col);max-width:var(--hud-col);max-height:none;height:auto;padding:var(--hud-pad) 10px;overflow:visible}
   html[data-controls="touch"] header h1{font-size:14px;line-height:1.2;margin:0 0 2px}
   html[data-controls="touch"] header small,html[data-controls="touch"] #place{display:block;font-size:11px;line-height:1.3}
-  html[data-controls="touch"] .stat{top:8px;right:8px;left:auto;bottom:auto;width:min(196px,calc(50% - 150px));max-width:min(196px,calc(50% - 150px));max-height:calc(100dvh - 204px);padding:6px 8px;line-height:1.25;overflow:hidden;pointer-events:none}
+  html[data-controls="touch"] .stat{top:var(--hud-margin);right:var(--hud-margin);left:auto;bottom:auto;width:var(--hud-stat);max-width:var(--hud-stat);max-height:calc(100dvh - var(--hud-margin) - var(--hud-stick) - 76px);padding:6px var(--hud-pad);line-height:1.25;overflow:hidden;pointer-events:none}
   html[data-controls="touch"] .stat .energy{margin-top:2px}
   html[data-controls="touch"] .stat .money{margin-top:2px}
   html[data-controls="touch"] .stat .bar{width:92px}
-  html[data-controls="touch"][data-hud="minimal"] .stat{top:8px;right:8px;width:auto;max-width:calc(50% - 150px);max-height:none}
-  html[data-controls="touch"] #panel{position:absolute;top:86px;left:8px;right:auto;bottom:auto;width:min(268px,calc(50% - 130px));max-height:calc(100dvh - 218px);overflow:auto}
+  html[data-controls="touch"][data-hud="minimal"] .stat{top:var(--hud-margin);right:var(--hud-margin);width:auto;max-width:var(--hud-stat);max-height:none}
+  html[data-controls="touch"] #panel{position:absolute;top:calc(var(--hud-margin) + 64px + var(--hud-gap));left:var(--hud-margin);right:auto;bottom:auto;width:var(--hud-col);max-width:var(--hud-col);max-height:calc(100dvh - var(--hud-margin) - var(--hud-stick) - var(--hud-gap) - 80px);overflow:auto}
   html[data-controls="touch"] #panel .buttons{margin-top:6px}
   html[data-controls="touch"] #panel .buttons button{padding:4px 6px;font-size:11px}
-  html[data-controls="touch"] #minimap{width:48px;height:48px;top:auto;left:140px;bottom:16px}
-  html[data-controls="touch"] #controlsHint.on{top:auto;bottom:56px;left:288px;right:156px;transform:none;width:auto;max-height:min(96px,calc(100dvh - 230px));overflow:auto;z-index:5}
-  html[data-controls="touch"] #iosHint.on{top:auto;bottom:164px;left:288px;right:156px;transform:none;width:auto;max-height:52px;overflow:auto;z-index:5}
-  html[data-controls="touch"] #toast{top:auto;bottom:12px;left:288px;right:156px;transform:none;width:auto;max-width:none;max-height:44px;overflow:hidden;white-space:normal;text-align:center;font-size:12px;z-index:4}
+  html[data-controls="touch"] #minimap{width:var(--hud-map);height:var(--hud-map);top:auto;left:calc(var(--hud-margin) + var(--hud-stick) + var(--hud-gap));bottom:var(--hud-margin)}
+  html[data-controls="touch"] #controlsHint.on{top:auto;bottom:calc(var(--hud-margin) + 40px + var(--hud-gap));left:calc(var(--hud-margin) + var(--hud-col) + var(--hud-gap));right:calc(var(--hud-margin) + var(--hud-actions) + var(--hud-gap));transform:none;width:auto;max-height:min(96px,calc(100dvh - 230px));overflow:auto;z-index:5}
+  html[data-controls="touch"] #iosHint.on{top:auto;bottom:calc(var(--hud-margin) + 40px + var(--hud-gap) + 96px + var(--hud-gap));left:calc(var(--hud-margin) + var(--hud-col) + var(--hud-gap));right:calc(var(--hud-margin) + var(--hud-actions) + var(--hud-gap));transform:none;width:auto;max-height:52px;overflow:auto;z-index:5}
+  html[data-controls="touch"] #toast{top:auto;bottom:var(--hud-margin);left:calc(var(--hud-margin) + var(--hud-col) + var(--hud-gap));right:calc(var(--hud-margin) + var(--hud-actions) + var(--hud-gap));transform:none;width:auto;max-width:none;max-height:40px;overflow:hidden;white-space:normal;text-align:center;font-size:12px;z-index:4}
   html[data-controls="touch"] #mission{z-index:2}
-  html[data-controls="touch"] #mission.on{top:60px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);min-width:0;width:min(280px,calc(100% - 520px));max-width:min(280px,calc(100% - 520px));max-height:calc(100dvh - 60px - 200px);overflow:auto;padding:8px 12px}
+  html[data-controls="touch"] #mission.on{top:calc(var(--hud-margin) + var(--hud-control) + var(--hud-gap));bottom:auto;left:50%;right:auto;transform:translateX(-50%);min-width:0;width:min(280px,calc(100% - 520px));max-width:min(280px,calc(100% - 520px));max-height:calc(100dvh - var(--hud-margin) - var(--hud-control) - var(--hud-gap) - 200px);overflow:auto;padding:8px 12px}
+}
+@media (min-width:1000px) and (min-height:700px){
+  html[data-controls="keyboard"]{--hud-map:256px}
+  html[data-controls="keyboard"] #minimap{top:128px;left:var(--hud-margin);width:var(--hud-map);height:var(--hud-map)}
+  html[data-controls="keyboard"] #panel{left:calc(var(--hud-margin) + var(--hud-map) + var(--hud-gap));bottom:var(--hud-margin);width:min(280px,calc(100vw - 780px));max-height:calc(100dvh - 144px);overflow:auto}
+  html[data-controls="keyboard"] #controlsHint,
+  html[data-controls="keyboard"] #controlsHint.on{left:auto;right:calc(var(--hud-margin) + 200px);transform:none;width:min(440px,calc(100vw - 760px));bottom:calc(var(--hud-margin) + var(--hud-control) + var(--hud-gap))}
+  html[data-controls="keyboard"] #toast{top:136px;bottom:auto;left:50%;transform:translateX(-50%)}
 }
 </style>
 </head>
