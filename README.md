@@ -27,8 +27,9 @@ Viết bằng **Three.js thuần** (không engine, không framework), mọi mô 
 | Tesla Roadster Rocket | ~158 km/h | Xe điện, nhanh nhất |
 | Mercedes GLC 200 | ~115 km/h | Động cơ xăng — tiếng máy khác xe điện |
 | VinFast VF8 Plus | ~126 km/h | Xe điện |
+| Ninja xe Lead | ~90 km/h mặt đất, ~166 km/h khi bay | Xe ga, bay và **lộn vòng** (phím L). Đổi trang phục mỗi lần chọn lại |
 
-Tăng tốc (boost) nhân tốc độ tối đa ×1,6. Cả ba xe đều bay được, có đèn pha, đèn hậu, bánh xe quay và lái theo góc cua.
+Ba xe hơi tăng tốc (boost) nhân tốc độ tối đa ×1,6. Ninja Lead dùng thông số bay riêng (lực đẩy 9, lên 8 m/s, xoay 1,5 rad/s). Cả bốn đều bay được, có đèn pha, đèn hậu, bánh xe quay và lái theo góc cua.
 
 ### Đồ hoạ
 - Vật liệu PBR (`MeshStandardMaterial`), tone mapping ACES, không gian màu sRGB, ánh sáng môi trường `RoomEnvironment` qua PMREM.
@@ -90,21 +91,27 @@ Bản đồ nhỏ xoay theo hướng xe (mục tiêu, trạm sạc, điểm nh�
 | **C** | Đổi camera: bám sau xe → buồng lái → nhìn từ trên cao |
 | **R** | Đổi thời tiết |
 | **T** | Tua nhanh 6 giờ |
+| **L** | Lộn vòng (chỉ Ninja Lead, khi đang bay và cách mặt đất ít nhất 4 m). Hướng nghiêng theo lái |
 | **M** | Bật / tắt tiếng |
+| Kéo chuột | Xoay camera tạm thời, rồi trả về phía sau xe |
 
 ### Cảm ứng (điện thoại, máy tính bảng)
-Lưới nút ở góc phải dưới:
+Máy có con trỏ thô (`pointer: coarse`) và màn hình cảm ứng mở sẵn cần điều khiển. Nút **Bàn phím / Cảm ứng** đổi chế độ và ghi vào `localStorage` (`xebay.controls`). `?controls=touch` hoặc `?controls=keyboard` ép một lần, không ghi đè lựa chọn đã lưu.
+
+Cần bên trái: kéo ngang để lái, lên để ga, xuống để phanh. Có thể chạm nhiều ngón cùng lúc. Nút bên phải (tối thiểu 48 px, hơi trong suốt, né vùng an toàn của màn hình):
 
 | Nút | Chức năng |
 |---|---|
-| ▲ / ▼ | Tăng ga / phanh, lùi |
-| ◀ / ▶ | Rẽ trái / phải |
+| ▲ / ▼ | Ga / phanh |
 | ↑ / ↓ | Bay lên / hạ xuống |
 | ⚡ | Boost |
 | 🚀 | Cất cánh / hạ cánh |
+| 🌀 | Lộn vòng |
 | 📯 | Bấm còi |
 
-Bảng bên trái có chọn xe, chất lượng, **🚀 Bay / Hạ cánh**, **🌦 Đổi thời tiết**, **🎯 Nhiệm vụ** và **⏸ Tạm dừng**. Trên màn hình hẹp, các nút Camera, Ngày/Đêm, Âm thanh và Reset được chuyển vào menu tạm dừng (kèm **Hủy nhiệm vụ** và **Về vạch xuất phát**).
+Khi xoay dọc có dòng nhắc xoay ngang; game vẫn chơi được. Trang không cuộn hay phóng to khi đang chơi.
+
+Bảng chọn xe, chất lượng, **🚀 Bay / Hạ cánh**, **🌀 Lộn vòng**, **🌦 Đổi thời tiết**, **🎯 Nhiệm vụ** và **⏸ Tạm dừng** vẫn ở trên màn hình. Trên màn hình hẹp, các nút Camera, Ngày/Đêm, Âm thanh và Reset nằm trong menu tạm dừng (kèm **Hủy nhiệm vụ** và **Về vạch xuất phát**). Nút **?** mở lại hướng dẫn ngắn của chế độ đang dùng.
 
 ---
 
@@ -160,7 +167,9 @@ src/                Mã nguồn (ES modules)
 | `missions.js` | Nhiệm vụ giao hàng/chở khách/đua, đèn lồng, trạm sạc VinFast, lưu thành tích |
 | `minimap.js` | Bản đồ nhỏ xoay theo xe và hướng tới mục tiêu |
 | `hud.js` | Cập nhật HUD, bảng nhiệm vụ, thanh năng lượng, menu tạm dừng, gắn sự kiện nút |
-| `input.js` | Bàn phím và nút cảm ứng → trạng thái điều khiển |
+| `input.js` | Phát hiện cảm ứng hoặc bàn phím/chuột, cần ảo, nút chạm, kéo chuột xoay camera |
+| `scooter.js` | Lưới xe ga Ninja Lead và người lái (hai bộ đồ) |
+| `stunt.js` | Điều kiện và đường cong lộn vòng |
 
 ---
 
@@ -192,7 +201,7 @@ npm run build
 ```bash
 npm run check
 ```
-Build rồi chạy `wrangler deploy --dry-run` để xác nhận cấu hình Cloudflare hợp lệ. Lệnh này phải thành công trước mỗi lần merge.
+Chạy unit test (`node --test`) cho cách chọn chế độ điều khiển và lộn vòng, build, rồi `wrangler deploy --dry-run` để xác nhận cấu hình Cloudflare hợp lệ. Lệnh này phải thành công trước mỗi lần merge.
 
 ### Triển khai lên Cloudflare
 Game chạy dưới dạng Worker chỉ có static assets — không cần server, D1, R2 hay KV.

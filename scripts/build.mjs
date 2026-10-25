@@ -5,7 +5,7 @@ import { build } from 'esbuild';
 const html = readFileSync('index.html', 'utf8');
 const sources = readdirSync('src').filter((f) => f.endsWith('.js')).map((f) => readFileSync(join('src', f), 'utf8'));
 const all = [html, ...sources].join('\n');
-for (const text of ['Tesla Roadster Rocket', 'Mercedes GLC 200', 'VinFast VF8 Plus', 'setWeather', 'toggleFly']) {
+for (const text of ['Tesla Roadster Rocket', 'Mercedes GLC 200', 'VinFast VF8 Plus', 'Ninja Lead', 'Ninja xe Lead', 'setWeather', 'toggleFly']) {
   if (!all.includes(text)) throw new Error(`Missing feature: ${text}`);
 }
 

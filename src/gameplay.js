@@ -4,6 +4,7 @@ import { WORLD_LIMIT, buildings } from './world.js';
 import { landmarkFootprints } from './landmarks.js';
 import { traffic, vehiclePosition, isVehicleActive } from './traffic.js';
 import { setFlyLabel, setToast } from './hud.js';
+import { stuntFinished, stuntGate, stuntRollAt } from './stunt.js';
 
 export const MAX_ALTITUDE = 280;
 const PLAYER_RADIUS = 1.6;
@@ -24,6 +25,12 @@ export const player = {
   pitch: 0,
   drift: 0,
   energy: 100,
+  stuntRoll: 0,
+  stuntT: -1,
+  stuntDir: 1,
+  stunts: 0,
+  stuntRequest: false,
+  stuntEvent: '',
 };
 
 export function toggleFly() {
@@ -41,7 +48,20 @@ export function resetPlayer() {
   player.vel.set(0, 0, 0);
   player.speed = player.altitude = player.vy = player.ground = player.heading = player.yawRate = 0;
   player.flying = false;
+  endStunt();
+  player.stunts = 0;
   setFlyLabel(false);
+}
+
+export function requestStunt() {
+  player.stuntRequest = true;
+}
+
+export function endStunt() {
+  player.stuntRoll = 0;
+  player.stuntT = -1;
+  player.stuntRequest = false;
+  player.stuntEvent = '';
 }
 
 const solids = () => (solidCache ||= [...buildings, ...landmarkFootprints]);
@@ -70,6 +90,7 @@ function bounce(normal, restitution) {
 // Returns the strongest impact this frame as { strength, point } or null.
 function resolveCollisions() {
   const p = player;
+  const radius = models[p.carId].radius || PLAYER_RADIUS;
   let hit = null;
   const report = (strength, x, z, y) => {
     if (strength > 2.5 && (!hit || strength > hit.strength)) hit = { strength, point: new THREE.Vector3(x, y, z) };
@@ -79,18 +100,18 @@ function resolveCollisions() {
     const cx = THREE.MathUtils.clamp(p.pos.x, b.minX, b.maxX), cz = THREE.MathUtils.clamp(p.pos.z, b.minZ, b.maxZ);
     let dx = p.pos.x - cx, dz = p.pos.z - cz;
     let d = Math.hypot(dx, dz);
-    if (d >= PLAYER_RADIUS) continue;
+    if (d >= radius) continue;
     if (d < 1e-4) {
       const exits = [p.pos.x - b.minX, b.maxX - p.pos.x, p.pos.z - b.minZ, b.maxZ - p.pos.z];
       const k = exits.indexOf(Math.min(...exits));
       dx = k === 0 ? -1 : k === 1 ? 1 : 0;
       dz = k === 2 ? -1 : k === 3 ? 1 : 0;
-      p.pos.x += dx * (exits[k] + PLAYER_RADIUS);
-      p.pos.z += dz * (exits[k] + PLAYER_RADIUS);
+      p.pos.x += dx * (exits[k] + radius);
+      p.pos.z += dz * (exits[k] + radius);
       n.set(dx, 0, dz);
     } else {
       n.set(dx / d, 0, dz / d);
-      p.pos.addScaledVector(n, PLAYER_RADIUS - d);
+      p.pos.addScaledVector(n, radius - d);
     }
     report(bounce(n, 0.25), cx, cz, Math.max(p.altitude, 0) + 0.8);
   }
@@ -98,7 +119,7 @@ function resolveCollisions() {
     for (const v of traffic) {
       if (!isVehicleActive(v)) continue;
       vehiclePosition(v, ai);
-      const r = PLAYER_RADIUS + (v.bike ? 0.8 : 1.9);
+      const r = radius + (v.bike ? 0.8 : 1.9);
       const dx = p.pos.x - ai.x, dz = p.pos.z - ai.z, d = Math.hypot(dx, dz);
       if (d >= r || d < 1e-4) continue;
       n.set(dx / d, 0, dz / d);
@@ -114,13 +135,16 @@ export function updatePlayer(dt, input, { inFlood, wet }) {
   const p = player;
   const model = models[p.carId];
   const canBoost = input.boost && p.energy > 0;
-  const max = model.max * (canBoost ? 1.6 : 1);
+  const flight = p.flying ? model.flight : null;
+  let max = model.max * (canBoost ? (model.boost ?? 1.6) : 1);
+  if (flight) max = flight.maxSpeed * (canBoost ? Math.sqrt(1.7) : 1);
 
   fwd.set(-Math.sin(p.heading), 0, -Math.cos(p.heading));
   right.set(Math.cos(p.heading), 0, -Math.sin(p.heading));
   let vf = p.vel.dot(fwd), vl = p.vel.dot(right);
 
-  const accel = input.accel ? (canBoost ? 32 : 23) : input.brake ? (vf > 0.5 ? -32 : -14) : -Math.sign(vf) * (p.flying ? 5 : 10);
+  const drive = flight ? flight.thrust * (canBoost ? 1.7 : 1) : (canBoost ? 32 : 23);
+  const accel = input.accel ? drive : input.brake ? (vf > 0.5 ? -32 : -14) : -Math.sign(vf) * (p.flying ? 5 : 10);
   if (vf > max) vf = Math.max(max, vf - Math.max(6, (vf - max) * 2.5) * dt);
   else vf = Math.min(max, vf + accel * dt);
   if (accel < 0 && vf > max) vf += accel * dt;
@@ -130,14 +154,21 @@ export function updatePlayer(dt, input, { inFlood, wet }) {
 
   // Lateral grip: low grip lets the car slide (drift) and keeps flying floaty.
   const drifting = !p.flying && input.turn !== 0 && vf > 16 && (canBoost || input.brake);
-  const grip = p.flying ? 1.4 : drifting ? 1.8 : 9 - wet * 4;
+  const grip = p.flying ? (flight?.lateralGrip ?? 1.4) : drifting ? 1.8 : 9 - wet * 4;
   vl *= Math.exp(-grip * dt);
   p.vel.copy(fwd).multiplyScalar(vf).addScaledVector(right, vl);
   p.speed = vf;
   p.drift = p.flying ? 0 : Math.min(1, Math.abs(vl) / 5);
 
-  const steer = input.turn * (0.7 + Math.min(Math.abs(vf), 45) * 0.02) * Math.min(1, 0.3 + Math.abs(vf) / 6) * (vf < 0 ? -1 : 1) * (drifting ? 1.35 : 1);
-  p.yawRate += (steer - p.yawRate) * Math.min(1, dt * (p.flying ? 2.5 : 7));
+  const reverse = vf < 0 ? -1 : 1;
+  let steer = input.turn * (0.7 + Math.min(Math.abs(vf), 45) * 0.02) * Math.min(1, 0.3 + Math.abs(vf) / 6) * reverse * (drifting ? 1.35 : 1);
+  if (flight) {
+    const speedBlend = 0.45 + 0.55 * Math.min(1, Math.abs(vf) / 18);
+    steer = input.turn * flight.yawRate * speedBlend * reverse;
+    p.yawRate += (steer - p.yawRate) * (1 - Math.exp(-flight.response * 1.6 * dt));
+  } else {
+    p.yawRate += (steer - p.yawRate) * Math.min(1, dt * (p.flying ? 2.5 : 7));
+  }
   p.heading += p.yawRate * dt;
 
   // Energy: flying and boost drain it; electric cars regenerate a little when braking.
@@ -157,7 +188,8 @@ export function updatePlayer(dt, input, { inFlood, wet }) {
   p.ground = groundHeight(p.pos.x, p.pos.z, p.altitude);
   let landed = 0;
   if (p.flying) {
-    const target = (input.up ? 18 : 0) - (input.down ? 18 : 0);
+    const climb = flight?.climbRate ?? 18;
+    const target = (input.up ? climb : 0) - (input.down ? climb : 0);
     p.vy += (target - p.vy) * Math.min(1, dt * 3);
     p.altitude += p.vy * dt;
     const floor = p.ground + 4;
@@ -187,8 +219,48 @@ export function updatePlayer(dt, input, { inFlood, wet }) {
   const speedFactor = Math.min(1, Math.abs(vf) / 30);
   const rollTarget = p.flying ? p.yawRate * 0.55 * (0.3 + speedFactor) : -p.yawRate * 0.05 * speedFactor - (p.drift * Math.sign(vl)) * 0.04;
   const pitchTarget = p.flying ? THREE.MathUtils.clamp(p.vy * 0.018 + (input.accel ? 0.05 : 0) - (input.brake ? 0.06 : 0), -0.35, 0.35) : (input.brake && vf > 2 ? -0.025 : input.accel ? 0.015 : 0);
-  p.roll += (THREE.MathUtils.clamp(rollTarget, -0.6, 0.6) - p.roll) * Math.min(1, dt * 4);
+  const bank = flight?.bank ?? 0.6;
+  p.roll += (THREE.MathUtils.clamp(rollTarget, -bank, bank) - p.roll) * Math.min(1, dt * 4);
   p.pitch += (pitchTarget - p.pitch) * Math.min(1, dt * 4);
+  stepStunt(dt, input, model);
 
   return { hit, landed };
+}
+
+function stepStunt(dt, input, model) {
+  const p = player;
+  p.stuntEvent = '';
+  if (p.stuntRequest) {
+    p.stuntRequest = false;
+    const gate = stuntGate({
+      canStunt: !!model.stunt,
+      flying: p.flying,
+      clearance: p.altitude - p.ground,
+      busy: p.stuntT >= 0,
+    });
+    if (gate === 'ok') {
+      p.stuntT = 0;
+      p.stuntDir = input.turn < -0.05 ? -1 : 1;
+      p.vy += 2.5;
+      p.stuntEvent = 'start';
+    } else if (gate === 'vehicle') {
+      setToast('Chỉ Ninja Lead mới lộn vòng được');
+    } else if (gate === 'air') {
+      setToast('Bay lên cao hơn rồi hãy lộn vòng (Space để cất cánh, L để lộn)');
+    }
+  }
+  if (p.stuntT < 0) return;
+  if (!p.flying || !model.stunt) {
+    endStunt();
+    return;
+  }
+  p.stuntT += dt;
+  p.stuntRoll = stuntRollAt(p.stuntT, p.stuntDir);
+  if (stuntFinished(p.stuntT)) {
+    p.stunts += 1;
+    p.stuntRoll = 0;
+    p.stuntT = -1;
+    p.stuntEvent = 'done';
+    setToast(p.stunts > 1 ? `Lộn vòng ×${p.stunts}!` : 'Lộn vòng!');
+  }
 }

@@ -2,13 +2,14 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Xe Bay Sài Gòn — Free Roam</title>
 <link rel="icon" href="data:,">
 <style>
 *{box-sizing:border-box}
+html,body{height:100%;touch-action:none;overscroll-behavior:none}
 body{margin:0;background:#101923;color:#fff;font:14px system-ui,Arial;overflow:hidden}
-canvas{display:block}
+canvas{display:block;touch-action:none;width:100%;height:100%}
 #hud{position:fixed;inset:0;pointer-events:none}
 header{position:absolute;top:16px;left:18px;background:#081a2bd9;padding:14px 18px;border:1px solid #ffffff26;border-radius:16px;backdrop-filter:blur(12px)}
 h1{font-size:19px;margin:0 0 3px}
@@ -24,8 +25,6 @@ button:hover{background:#29617a}
 .buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .hint{font-size:12px;color:#b7d3e1;line-height:1.7;margin-top:8px}
 #toast{position:absolute;top:118px;left:50%;transform:translateX(-50%);background:#102f43dd;padding:10px 15px;border-radius:20px;white-space:nowrap}
-#mobile{display:none;position:absolute;bottom:25px;right:16px;pointer-events:auto;gap:8px}
-#mobile button{min-width:55px;min-height:54px;background:#17384ac9;touch-action:none}
 #minimap{position:absolute;top:112px;left:18px;width:170px;height:170px;border-radius:50%;background:#0b1a24aa;box-shadow:0 4px 18px #0007}
 .money{margin-top:4px;font-weight:700;color:#ffe08a}
 .energy{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:6px}
@@ -60,14 +59,44 @@ button:hover{background:#29617a}
   .q{margin-top:5px}
   .stat{font-size:12px}
   .hint{display:none}
-  #mobile{display:grid;grid-template-columns:repeat(3,1fr);bottom:12px;right:8px}
-  #mobile button{min-width:43px;min-height:47px;padding:4px}
   #minimap{top:118px;left:8px;width:108px;height:108px}
   #mission{top:auto;bottom:258px;left:8px;right:8px;transform:none;min-width:0;max-width:none;padding:6px 10px}
   #mtext{font-size:11px;margin:2px 0 3px}
   .bar{width:80px}
   .desk{display:none}
   #toast{top:auto;bottom:356px;font-size:11px;max-width:92vw;white-space:normal;text-align:center}
+}
+#panel,.pcard,#controlsHint{touch-action:pan-y}
+#controlBar{position:absolute;z-index:8;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
+#controlBar button{min-width:44px;min-height:44px;padding:8px 12px;background:rgba(23,56,74,.5);border-color:rgba(255,255,255,.35)}
+#controlsHint{display:none;position:absolute;z-index:9;left:50%;bottom:calc(64px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(480px,calc(100vw - 48px));align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(8,26,43,.78);border:1px solid rgba(255,255,255,.28);pointer-events:auto;backdrop-filter:blur(10px)}
+#controlsHint.on{display:flex}
+#controlsHint p{margin:0;font-size:13px;line-height:1.45;color:#e7f4fb}
+#controlsHintClose{min-width:44px;min-height:44px;background:rgba(23,61,81,.72)}
+#rotateHint{display:none;position:absolute;z-index:6;left:50%;top:46%;transform:translate(-50%,-50%);max-width:min(280px,78vw);text-align:center;padding:12px 14px;border-radius:16px;background:rgba(8,26,43,.5);border:1px solid rgba(255,255,255,.28);pointer-events:none}
+#touch{display:none;position:absolute;inset:0;z-index:4;pointer-events:none}
+html[data-controls="touch"] #touch{display:block}
+#stick{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));width:120px;height:120px;border-radius:50%;background:rgba(23,56,74,.42);border:2px solid rgba(255,255,255,.38);touch-action:none;pointer-events:auto}
+#stickKnob{position:absolute;left:34px;top:34px;width:52px;height:52px;border-radius:50%;background:rgba(232,246,255,.62);border:1px solid rgba(255,255,255,.75)}
+#touchActions{position:absolute;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,48px);gap:8px;touch-action:none;pointer-events:auto}
+#touchActions button{min-width:48px;min-height:48px;padding:0;font-size:18px;background:rgba(23,56,74,.45);border-color:rgba(255,255,255,.35);touch-action:none}
+#touchActions button.down,#touchActions button:active{background:rgba(47,134,168,.72)}
+#touch,#stick,#touchActions,#touchActions button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html[data-controls="keyboard"] canvas{cursor:grab}
+html[data-controls="keyboard"].looking canvas{cursor:grabbing}
+html[data-controls="touch"] #controlBar{bottom:auto;top:max(8px,env(safe-area-inset-top))}
+html[data-controls="touch"] #controlsHint{bottom:auto;top:calc(58px + env(safe-area-inset-top));width:min(420px,calc(100vw - 360px))}
+html[data-controls="touch"] header{top:max(6px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left));max-width:190px;padding:8px 10px}
+html[data-controls="touch"] h1{font-size:14px}
+html[data-controls="touch"] .stat{top:max(6px,env(safe-area-inset-top));right:max(6px,env(safe-area-inset-right));max-width:150px;padding:6px 8px;font-size:11px}
+html[data-controls="touch"] .speed{font-size:18px}
+html[data-controls="touch"] #panel{left:max(8px,env(safe-area-inset-left));right:auto;top:112px;bottom:auto;width:min(210px,36vw);max-height:calc(100dvh - 280px);overflow:auto;padding:8px;font-size:12px}
+html[data-controls="touch"] .hint,html[data-controls="touch"] .desk{display:none}
+html[data-controls="touch"] #minimap{width:72px;height:72px;top:auto;left:max(8px,env(safe-area-inset-left));bottom:calc(148px + env(safe-area-inset-bottom))}
+html[data-controls="touch"] #toast{top:auto;bottom:calc(148px + env(safe-area-inset-bottom));max-width:42vw;white-space:normal;text-align:center;font-size:12px}
+@media (orientation:portrait){
+  html[data-controls="touch"] #rotateHint{display:block}
+  html[data-controls="touch"] #controlsHint{width:min(420px,calc(100vw - 24px))}
 }
 </style>
 </head>
@@ -101,6 +130,7 @@ button:hover{background:#29617a}
       <option value="0">Tesla Roadster Rocket</option>
       <option value="1">Mercedes GLC 200</option>
       <option value="2">VinFast VF8 Plus</option>
+      <option value="3">Ninja xe Lead</option>
     </select>
     <label class="q">CHẤT LƯỢNG
       <select id="quality">
@@ -111,6 +141,7 @@ button:hover{background:#29617a}
     </label>
     <div class="buttons">
       <button id="fly">🚀 Bay / Hạ cánh</button>
+      <button id="stunt">🌀 Lộn vòng</button>
       <button id="rain">🌦 Đổi thời tiết</button>
       <button id="missionBtn">🎯 Nhiệm vụ</button>
       <button id="pauseBtn">⏸ Tạm dừng</button>
@@ -119,12 +150,29 @@ button:hover{background:#29617a}
       <button id="sound" class="desk">🔊 Âm thanh</button>
       <button id="reset" class="desk">↺ Reset</button>
     </div>
-    <div class="hint">WASD / phím mũi tên: lái · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · H: còi · N: nhiệm vụ · Esc/P: tạm dừng · C: camera · R: thời tiết · T: đổi giờ · M: tắt tiếng. Tìm 12 đèn lồng bí ẩn trên mái nhà, sạc pin ở trạm VinFast.</div>
+    <div class="hint">WASD / phím mũi tên: lái · Kéo chuột: xoay camera · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · L: lộn vòng (Ninja Lead, khi đang bay) · H: còi · N: nhiệm vụ · Esc/P: tạm dừng · C: camera · R: thời tiết · T: đổi giờ · M: tắt tiếng. Nút Bàn phím / Cảm ứng đổi chế độ và được nhớ lại. Tìm 12 đèn lồng bí ẩn trên mái nhà, sạc pin ở trạm VinFast.</div>
   </div>
-  <div id="mobile">
-    <button data-key="KeyQ">↓</button><button data-key="KeyW">▲</button><button data-key="KeyE">↑</button>
-    <button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button>
-    <button data-key="ShiftLeft">⚡</button><button id="mfly">🚀</button><button data-key="KeyH">📯</button>
+  <div id="controlBar">
+    <button type="button" id="schemeToggle">Bàn phím</button>
+    <button type="button" id="controlsHintOpen" aria-label="Mở hướng dẫn điều khiển">?</button>
+  </div>
+  <div id="controlsHint" role="dialog" aria-label="Hướng dẫn điều khiển">
+    <p id="controlsHintText"></p>
+    <button type="button" id="controlsHintClose">Đóng</button>
+  </div>
+  <div id="rotateHint">Xoay ngang máy để chơi dễ hơn</div>
+  <div id="touch" aria-hidden="true">
+    <div id="stick" role="application" aria-label="Cần lái, ga và phanh"><div id="stickKnob"></div></div>
+    <div id="touchActions">
+      <button type="button" data-key="KeyE" aria-label="Lên">↑</button>
+      <button type="button" data-key="KeyW" aria-label="Ga">▲</button>
+      <button type="button" data-key="ShiftLeft" aria-label="Tăng tốc">⚡</button>
+      <button type="button" data-key="KeyQ" aria-label="Xuống">↓</button>
+      <button type="button" data-key="KeyS" aria-label="Phanh">▼</button>
+      <button type="button" id="mfly" aria-label="Bay hoặc hạ cánh">🚀</button>
+      <button type="button" id="mstunt" aria-label="Lộn vòng">🌀</button>
+      <button type="button" data-key="KeyH" aria-label="Còi">📯</button>
+    </div>
   </div>
 </div>
 <div id="pause">
@@ -144,7 +192,7 @@ button:hover{background:#29617a}
     <h3>THÀNH TÍCH</h3>
     <div id="pstats"></div>
     <h3>HƯỚNG DẪN</h3>
-    <div class="hint">Lái vào cột sáng <b style="color:#ffb340">GIAO HÀNG</b>, <b style="color:#4fd1ff">CHỞ KHÁCH</b> hoặc <b style="color:#ff5fa2">ĐUA</b> để nhận nhiệm vụ (hoặc bấm 🎯). Bay và tăng tốc tốn năng lượng — đỗ vào vòng xanh ở trạm sạc VinFast để sạc. Xe điện tự sạc nhẹ khi phanh. Shift + rẽ ở tốc độ cao để drift.</div>
+    <div class="hint">Lái vào cột sáng <b style="color:#ffb340">GIAO HÀNG</b>, <b style="color:#4fd1ff">CHỞ KHÁCH</b> hoặc <b style="color:#ff5fa2">ĐUA</b> để nhận nhiệm vụ (hoặc bấm 🎯). Bay và tăng tốc tốn năng lượng — đỗ vào vòng xanh ở trạm sạc VinFast để sạc. Xe điện tự sạc nhẹ khi phanh. Shift + rẽ ở tốc độ cao để drift. Ninja Lead bay rồi bấm L (hoặc 🌀) để lộn vòng. Nút ? mở lại hướng dẫn điều khiển.</div>
   </div>
 </div>
 <!-- Dev only: build.mjs removes the import map and swaps in the bundled /game.js. -->
