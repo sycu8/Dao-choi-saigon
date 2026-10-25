@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
 import net from 'node:net';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import test from 'node:test';
 import { containsBox, findOverlaps, intersectionArea } from '../src/hudLayout.js';
 
@@ -35,11 +35,46 @@ function freePort() {
   });
 }
 
-function serveHtml(html) {
+function serveHud() {
+  const rootDir = new URL('..', import.meta.url).pathname;
+  const raw = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const stripped = raw.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
+  const boot = raw.replace(
+    /<script type="module" src="\.\/src\/main\.js"><\/script>/,
+    `<script type="module">
+      import { initInput } from './src/input.js';
+      import { initDisplay } from './src/display.js';
+      try {
+        initInput(() => {});
+        initDisplay();
+        document.documentElement.dataset.booted = '1';
+      } catch (error) {
+        document.documentElement.dataset.bootError = String(error);
+      }
+    </script>`,
+  );
   return new Promise((resolve) => {
     const server = createServer((req, res) => {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(html);
+      const url = new URL(req.url, 'http://127.0.0.1');
+      if (url.pathname === '/' || url.pathname === '/index.html') {
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        res.end(stripped);
+        return;
+      }
+      if (url.pathname === '/boot.html') {
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        res.end(boot);
+        return;
+      }
+      const file = join(rootDir, decodeURIComponent(url.pathname));
+      if (!file.startsWith(rootDir.endsWith(sep) ? rootDir : rootDir + sep) || !existsSync(file)) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      const type = file.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/plain; charset=utf-8';
+      res.writeHead(200, { 'content-type': type });
+      res.end(readFileSync(file));
     });
     server.listen(0, '127.0.0.1', () => resolve(server));
   });
@@ -178,20 +213,26 @@ const MEASURE = `(setup) => {
   };
   const panel = document.getElementById('panel');
   const panelStyle = getComputedStyle(panel);
+  const contentsAncestors = [];
+  let node = panel.parentElement;
+  while (node && node !== document.documentElement) {
+    if (getComputedStyle(node).display === 'contents') contentsAncestors.push(node.id || node.nodeName);
+    node = node.parentElement;
+  }
   return {
     boxes,
     clips: ['header', '.stat', '#panel', '#mission', '#controlsHint', '#toast'].map(clip).filter(Boolean),
     viewport: { width: innerWidth, height: innerHeight },
     panelDisplay: panelStyle.display,
     panelRects: panel.getClientRects().length,
+    contentsAncestors,
     stat: visibleBox(document.querySelector('.stat'), '.stat'),
+    minimap: visibleBox(document.getElementById('minimap'), '#minimap'),
   };
 }`;
 
 test('phone and desktop HUD boxes do not overlap', { skip: !CHROME && 'Chrome is not installed' }, async () => {
-  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
-  const server = await serveHtml(html);
+  const server = await serveHud();
   const pagePort = server.address().port;
   const debugPort = await freePort();
   const profile = mkdtempSync(join(tmpdir(), 'hud-layout-'));
@@ -208,11 +249,11 @@ test('phone and desktop HUD boxes do not overlap', { skip: !CHROME && 'Chrome is
     await send('Runtime.enable');
 
     const scenarios = [
-      { name: '844x390 full flying', width: 844, height: 390, setup: { controls: 'touch', hud: 'full', flying: true, mission: true, hint: true, toast: true, ios: false }, corner: true, clip: true },
-      { name: '844x390 full ground with home-screen hint', width: 844, height: 390, setup: { controls: 'touch', hud: 'full', flying: false, mission: true, hint: true, toast: true, ios: true }, corner: true, clip: true },
+      { name: '844x390 full flying', width: 844, height: 390, setup: { controls: 'touch', hud: 'full', flying: true, mission: true, hint: true, toast: true, ios: false }, corner: true, clip: true, map: 96 },
+      { name: '844x390 full ground with home-screen hint', width: 844, height: 390, setup: { controls: 'touch', hud: 'full', flying: false, mission: true, hint: true, toast: true, ios: true }, corner: true, clip: true, map: 96 },
       { name: '844x390 minimal', width: 844, height: 390, setup: { controls: 'touch', hud: 'minimal', flying: true, mission: true, hint: true, toast: true, ios: false }, corner: true, minimal: true, clip: true },
-      { name: '390x844 portrait', width: 390, height: 844, setup: { controls: 'touch', hud: 'full', flying: false, mission: true, hint: true, toast: true, ios: false } },
-      { name: '1366x768 desktop', width: 1366, height: 768, setup: { controls: 'keyboard', hud: 'full', flying: false, mission: true, hint: true, toast: true, ios: false } },
+      { name: '390x844 portrait', width: 390, height: 844, setup: { controls: 'touch', hud: 'full', flying: false, mission: true, hint: true, toast: true, ios: false }, map: 96 },
+      { name: '1366x768 desktop', width: 1366, height: 768, setup: { controls: 'keyboard', hud: 'full', flying: false, mission: true, hint: true, toast: true, ios: false }, map: 192 },
     ];
 
     for (const scenario of scenarios) {
@@ -248,12 +289,79 @@ test('phone and desktop HUD boxes do not overlap', { skip: !CHROME && 'Chrome is
         assert.ok(data.stat && data.stat.top <= 12, `${scenario.name} stat top ${data.stat && data.stat.top}`);
         assert.ok(data.stat.right >= scenario.width - 12, `${scenario.name} stat right ${data.stat.right}`);
       }
+      if (scenario.map) {
+        assert.ok(data.minimap, `${scenario.name} minimap is missing`);
+        assert.ok(data.minimap.width >= scenario.map && data.minimap.height >= scenario.map, `${scenario.name} minimap is ${data.minimap.width}x${data.minimap.height}, want at least ${scenario.map}`);
+        assert.equal(data.boxes.some((box) => box.name === '#minimap'), true, scenario.name);
+      }
       if (scenario.minimal) {
         assert.equal(data.panelDisplay, 'none', scenario.name);
         assert.equal(data.panelRects, 0, scenario.name);
+        assert.deepEqual(data.contentsAncestors, [], `${scenario.name} panel still sits in display:contents`);
         assert.equal(data.boxes.some((box) => box.name === '#panel'), false, scenario.name);
+        assert.equal(data.boxes.some((box) => box.name === '#minimap'), false, scenario.name);
         assert.equal(data.boxes.some((box) => box.name === '#weather'), false, scenario.name);
         assert.equal(data.boxes.some((box) => box.name === '#toast'), false, scenario.name);
+      }
+    }
+
+    await send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `(() => {
+        const mode = new URLSearchParams(location.search).get('savedHud');
+        if (mode === 'clear') localStorage.removeItem('xebay.hud');
+        else if (mode === 'minimal' || mode === 'full') localStorage.setItem('xebay.hud', mode);
+      })();`,
+    });
+    const bootModes = [
+      { savedHud: 'minimal', hud: 'minimal', hidden: true },
+      { savedHud: 'clear', hud: 'minimal', hidden: true },
+      { savedHud: 'full', hud: 'full', hidden: false },
+    ];
+    for (const mode of bootModes) {
+      await send('Emulation.setDeviceMetricsOverride', {
+        width: 844,
+        height: 390,
+        deviceScaleFactor: 1,
+        mobile: true,
+      });
+      const loaded = cdp.wait('Page.loadEventFired');
+      await send('Page.navigate', { url: `http://127.0.0.1:${pagePort}/boot.html?controls=touch&savedHud=${mode.savedHud}` });
+      await loaded;
+      const measured = await send('Runtime.evaluate', {
+        expression: `(() => {
+          const panel = document.getElementById('panel');
+          const style = getComputedStyle(panel);
+          const contents = [];
+          let node = panel.parentElement;
+          while (node && node !== document.documentElement) {
+            if (getComputedStyle(node).display === 'contents') contents.push(node.id || node.nodeName);
+            node = node.parentElement;
+          }
+          return {
+            hud: document.documentElement.dataset.hud,
+            controls: document.documentElement.dataset.controls,
+            booted: document.documentElement.dataset.booted || '',
+            bootError: document.documentElement.dataset.bootError || '',
+            display: style.display,
+            rects: panel.getClientRects().length,
+            contents,
+          };
+        })()`,
+        returnByValue: true,
+      });
+      const data = measured.result.value;
+      const label = `844x390 savedHud=${mode.savedHud}`;
+      assert.equal(data.bootError, '', label);
+      assert.equal(data.booted, '1', label);
+      assert.equal(data.controls, 'touch', label);
+      assert.equal(data.hud, mode.hud, label);
+      assert.deepEqual(data.contents, [], `${label} panel still sits in display:contents`);
+      if (mode.hidden) {
+        assert.equal(data.display, 'none', label);
+        assert.equal(data.rects, 0, label);
+      } else {
+        assert.notEqual(data.display, 'none', label);
+        assert.ok(data.rects > 0, label);
       }
     }
   } finally {
