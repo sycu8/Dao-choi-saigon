@@ -23,11 +23,34 @@ select,button{background:#193d51;color:#fff;border:1px solid #4b7186;border-radi
 button:hover{background:#29617a}
 .buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .hint{font-size:12px;color:#b7d3e1;line-height:1.7;margin-top:8px}
-#toast{position:absolute;top:100px;left:50%;transform:translateX(-50%);background:#102f43dd;padding:10px 15px;border-radius:20px;white-space:nowrap}
+#toast{position:absolute;top:118px;left:50%;transform:translateX(-50%);background:#102f43dd;padding:10px 15px;border-radius:20px;white-space:nowrap}
 #mobile{display:none;position:absolute;bottom:25px;right:16px;pointer-events:auto;gap:8px}
 #mobile button{min-width:55px;min-height:54px;background:#17384ac9;touch-action:none}
+#minimap{position:absolute;top:112px;left:18px;width:170px;height:170px;border-radius:50%;background:#0b1a24aa;box-shadow:0 4px 18px #0007}
+.money{margin-top:4px;font-weight:700;color:#ffe08a}
+.energy{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:6px}
+.bar{width:110px;height:9px;border-radius:5px;background:#ffffff22;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#35e07a,#9cff6a);transition:width .2s}
+.bar i.low{background:linear-gradient(90deg,#ff4b3a,#ffb340)}
+#mission{position:absolute;top:16px;left:50%;transform:translateX(-50%);min-width:280px;max-width:420px;background:#081a2be6;border:1px solid #ffcc3366;border-radius:16px;padding:10px 16px;text-align:center;display:none}
+#mission.on{display:block}
+#mtitle{font-weight:800;color:#ffcc33}
+#mtext{font-size:13px;margin:3px 0 6px;color:#e3f1f8}
+.mrow{display:flex;align-items:center;justify-content:center;gap:14px;font-weight:700}
+#marrow{display:inline-block;font-size:22px;color:#ffcc33;transition:transform .1s linear}
+#mtimer.warn{color:#ff6b5a}
+#pause{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#03101acc;pointer-events:auto;backdrop-filter:blur(4px)}
+#pause.on{display:flex}
+.pcard{background:#0b2233;border:1px solid #ffffff2e;border-radius:20px;padding:20px 24px;width:min(420px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
+.pcard h2{margin:0 0 12px;font-size:22px}
+.pcard h3{margin:14px 0 6px;font-size:13px;color:#a8c5d5;letter-spacing:.06em}
+.qbtns{display:flex;gap:6px}
+.qbtns button{flex:1}
+.qbtns button.sel{background:#2f86a8;border-color:#8fd3ef}
+#pstats{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13px}
+#pstats b{text-align:right;color:#ffe08a}
 @media(max-width:760px){
-  header{top:8px;left:8px;padding:9px}
+  header{top:8px;left:8px;padding:9px;max-width:calc(100vw - 200px)}
   h1{font-size:14px}
   .stat{top:8px;right:8px;padding:9px}
   .speed{font-size:22px}
@@ -39,7 +62,12 @@ button:hover{background:#29617a}
   .hint{display:none}
   #mobile{display:grid;grid-template-columns:repeat(3,1fr);bottom:12px;right:8px}
   #mobile button{min-width:43px;min-height:47px;padding:4px}
-  #toast{top:auto;bottom:250px;font-size:11px;max-width:92vw;white-space:normal;text-align:center}
+  #minimap{top:118px;left:8px;width:108px;height:108px}
+  #mission{top:auto;bottom:258px;left:8px;right:8px;transform:none;min-width:0;max-width:none;padding:6px 10px}
+  #mtext{font-size:11px;margin:2px 0 3px}
+  .bar{width:80px}
+  .desk{display:none}
+  #toast{top:auto;bottom:356px;font-size:11px;max-width:92vw;white-space:normal;text-align:center}
 }
 </style>
 </head>
@@ -56,7 +84,15 @@ button:hover{background:#29617a}
     <div id="weather">☀️ Nắng</div>
     <div id="traffic">🚦 Giao thông: Bình thường</div>
     <div id="clock">🕒 15:30</div>
+    <div class="energy"><span>⚡</span><div class="bar"><i id="energy"></i></div></div>
+    <div id="money" class="money">💰 0đ · ⭐ 0</div>
     <div id="fps" class="fps">-- FPS</div>
+  </div>
+  <canvas id="minimap"></canvas>
+  <div id="mission">
+    <div id="mtitle"></div>
+    <div id="mtext"></div>
+    <div class="mrow"><span id="marrow">▲</span><span id="mdist"></span><span id="mtimer"></span></div>
   </div>
   <div id="toast">WASD lái · Space bay · Shift tăng tốc</div>
   <div id="panel">
@@ -76,17 +112,39 @@ button:hover{background:#29617a}
     <div class="buttons">
       <button id="fly">🚀 Bay / Hạ cánh</button>
       <button id="rain">🌦 Đổi thời tiết</button>
-      <button id="camera">📷 Camera</button>
-      <button id="time">🌗 Ngày/Đêm</button>
-      <button id="sound">🔊 Âm thanh</button>
-      <button id="reset">↺ Reset</button>
+      <button id="missionBtn">🎯 Nhiệm vụ</button>
+      <button id="pauseBtn">⏸ Tạm dừng</button>
+      <button id="camera" class="desk">📷 Camera</button>
+      <button id="time" class="desk">🌗 Ngày/Đêm</button>
+      <button id="sound" class="desk">🔊 Âm thanh</button>
+      <button id="reset" class="desk">↺ Reset</button>
     </div>
-    <div class="hint">WASD / phím mũi tên: lái · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · H: còi · C: camera · R: thời tiết · T: đổi giờ · M: tắt tiếng. Đường phố và giao thông được mô phỏng cách điệu.</div>
+    <div class="hint">WASD / phím mũi tên: lái · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · H: còi · N: nhiệm vụ · Esc/P: tạm dừng · C: camera · R: thời tiết · T: đổi giờ · M: tắt tiếng. Tìm 12 đèn lồng bí ẩn trên mái nhà, sạc pin ở trạm VinFast.</div>
   </div>
   <div id="mobile">
     <button data-key="KeyQ">↓</button><button data-key="KeyW">▲</button><button data-key="KeyE">↑</button>
     <button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button>
     <button data-key="ShiftLeft">⚡</button><button id="mfly">🚀</button><button data-key="KeyH">📯</button>
+  </div>
+</div>
+<div id="pause">
+  <div class="pcard">
+    <h2>⏸ Tạm dừng</h2>
+    <button id="resume" style="width:100%">▶ Tiếp tục</button>
+    <h3>CHẤT LƯỢNG ĐỒ HỌA</h3>
+    <div class="qbtns"><button data-q="low">Thấp</button><button data-q="medium">Trung bình</button><button data-q="high">Cao</button></div>
+    <h3>TÙY CHỌN</h3>
+    <div class="buttons">
+      <button id="pcamera">📷 Camera</button>
+      <button id="ptime">🌗 Ngày/Đêm</button>
+      <button id="psound">🔊 Âm thanh</button>
+      <button id="preset">↺ Về vạch xuất phát</button>
+      <button id="pcancel">✖ Hủy nhiệm vụ</button>
+    </div>
+    <h3>THÀNH TÍCH</h3>
+    <div id="pstats"></div>
+    <h3>HƯỚNG DẪN</h3>
+    <div class="hint">Lái vào cột sáng <b style="color:#ffb340">GIAO HÀNG</b>, <b style="color:#4fd1ff">CHỞ KHÁCH</b> hoặc <b style="color:#ff5fa2">ĐUA</b> để nhận nhiệm vụ (hoặc bấm 🎯). Bay và tăng tốc tốn năng lượng — đỗ vào vòng xanh ở trạm sạc VinFast để sạc. Xe điện tự sạc nhẹ khi phanh. Shift + rẽ ở tốc độ cao để drift.</div>
   </div>
 </div>
 <!-- Dev only: build.mjs removes the import map and swaps in the bundled /game.js. -->

@@ -10,9 +10,11 @@ import { createPostFX } from './postfx.js';
 import { createNightLights } from './lights.js';
 import { createCarFx } from './carfx.js';
 import { shake } from './effects.js';
-import { startAudio, updateAudio, toggleMute, onMuteChange, distantHorn } from './audio.js';
+import { startAudio, updateAudio, toggleMute, onMuteChange, distantHorn, thump } from './audio.js';
 import { player, toggleFly, resetPlayer, updatePlayer } from './gameplay.js';
-import { updateHud, bindButtons, setFps, setQualityLabel, setMuteLabel } from './hud.js';
+import { createMissions, updateMissions, startNextMission, cancelMission, missions, save, formatMoney, LANTERN_COUNT } from './missions.js';
+import { createMinimap, updateMinimap, bearingTo } from './minimap.js';
+import { updateHud, bindButtons, setFps, setQualityLabel, setMuteLabel, setToast, setPaused, setQualityButtons, updateMissionHud, updateProgress, setStats } from './hud.js';
 import { initInput, axis, keys } from './input.js';
 import { settings, tier, setQuality, onQualityChange } from './settings.js';
 
@@ -32,6 +34,9 @@ const nightLights = createNightLights(scene, car.group);
 const carFx = createCarFx(scene, car);
 carFx.attach(car.info);
 const postfx = createPostFX(renderer, scene, camera);
+createMissions(scene);
+createMinimap(document.getElementById('minimap'));
+car.group.rotation.order = 'YXZ';
 
 onNightChange((n) => {
   headlightMat.color.setRGB(1.6 + n * 3, 1.6 + n * 3, 1.5 + n * 2.6);
@@ -72,6 +77,7 @@ function applyQuality(t) {
   carFx.setDensity(t.particles);
   postfx.configure(t);
   setQualityLabel(settings.quality);
+  setQualityButtons(settings.quality);
   resize();
 }
 onQualityChange(applyQuality);
@@ -80,10 +86,29 @@ applyQuality(tier());
 let camMode = 0;
 const cycleCamera = () => (camMode = (camMode + 1) % 3);
 
+let paused = false;
+function togglePause() {
+  paused = !paused;
+  setPaused(paused);
+  if (paused) {
+    setStats([
+      ['💰 Tiền', formatMoney(save.money)],
+      ['⭐ Điểm', save.score],
+      ['📦 Đơn đã giao', save.deliveries],
+      ['🚕 Khách đã chở', save.passengers],
+      ['🏁 Kỷ lục đua', save.bestRace ? save.bestRace.toFixed(1) + ' s' : '—'],
+      ['🏮 Đèn lồng bí ẩn', `${save.found.length}/${LANTERN_COUNT}`],
+    ]);
+  }
+}
+
 addEventListener('pointerdown', startAudio, { capture: true });
 initInput((code) => {
   startAudio();
+  if (code === 'Escape' || code === 'KeyP') togglePause();
+  if (paused) return;
   if (code === 'Space') toggleFly();
+  if (code === 'KeyN') startNextMission(player);
   if (code === 'KeyC') cycleCamera();
   if (code === 'KeyR') nextWeather();
   if (code === 'KeyT') skipTime();
@@ -103,7 +128,16 @@ bindButtons({
     carFx.attach(car.info);
     applyShading(car.group);
   },
-  onReset: resetPlayer,
+  onReset: () => {
+    resetPlayer();
+    if (paused) togglePause();
+  },
+  onMission: () => startNextMission(player),
+  onPause: togglePause,
+  onCancel: () => {
+    cancelMission();
+    if (paused) togglePause();
+  },
 });
 
 const clock = new THREE.Clock();
@@ -123,25 +157,45 @@ function updateCamera(dt, shakeOffset) {
   camera.position.add(shakeOffset);
 }
 
-let frames = 0, fpsTime = 0, adaptTime = 0, adaptFrames = 0, honkTimer = 4;
+const NO_INPUT = { accel: false, brake: false, turn: 0, boost: false, up: false, down: false };
+let frames = 0, fpsTime = 0, adaptTime = 0, adaptFrames = 0, honkTimer = 4, simTime = 0, wasCharging = false;
 function loop() {
   requestAnimationFrame(loop);
   const raw = clock.getDelta();
-  const dt = Math.min(raw, 0.045), t = clock.elapsedTime;
-  const input = axis();
+  if (paused) {
+    postfx.render();
+    return;
+  }
+  const dt = Math.min(raw, 0.045);
+  const t = (simTime += dt);
+  const input = player.energy > 0 ? axis() : { ...axis(), boost: false };
   const model = models[player.carId];
 
   const inFlood = isInFlood(player.pos, player.altitude);
-  updatePlayer(dt, input, inFlood);
-  carVelocity.set(-Math.sin(player.heading) * player.speed, 0, -Math.cos(player.heading) * player.speed);
+  const { hit, landed } = updatePlayer(dt, input, { inFlood, wet: weather.mix.wet });
+  if (hit) {
+    const k = Math.min(1, hit.strength / 18);
+    thump(0.3 + k);
+    shake.add(0.15 + k * 0.6);
+    for (let i = 0; i < 6 + k * 18; i++) {
+      carFx.spray.spawn(hit.point, carVelocity.set((Math.random() - 0.5) * 9, 2 + Math.random() * 5, (Math.random() - 0.5) * 9), { life: 0.45, size0: 0.18, size1: 0.05, alpha: 1, color: [3, 1.6, 0.4], gravity: 16, drag: 0.4 });
+    }
+    if (hit.strength > 10) setToast('💥 Va chạm! Lái cẩn thận nhé.');
+  }
+  if (landed > 9) thump(Math.min(1, landed / 20));
+  carVelocity.copy(player.vel);
   car.group.position.set(player.pos.x, player.altitude, player.pos.z);
-  car.group.rotation.set(player.flying ? Math.sin(t * 2) * 0.025 : 0, player.heading, input.turn * -0.05);
+  car.group.rotation.set(player.pitch + (player.flying ? Math.sin(t * 2) * 0.02 : 0), player.heading, player.roll);
   animateWheels(car, player.speed, input.turn, dt);
-  updateTraffic(dt, t, isStorm() ? 0.6 : 1);
+  updateTraffic(dt, t, isStorm() ? 0.6 : 1, player);
+  updateMissions(dt, t, player);
+  if (missions.charging && !wasCharging) setToast('⚡ Đang sạc tại trạm VinFast…');
+  if (!missions.charging && wasCharging) setToast(player.energy >= 99.5 ? '🔋 Đã sạc đầy!' : 'Ngừng sạc.');
+  wasCharging = missions.charging;
 
   const continuousShake = carFx.update(dt, t, {
-    speed: player.speed, heading: player.heading, altitude: player.altitude, flying: player.flying,
-    boost: input.boost, accel: input.accel, inFlood, wet: weather.mix.wet, maxSpeed: model.max * 1.6,
+    speed: player.speed, heading: player.heading, altitude: player.altitude - player.ground, flying: player.flying,
+    boost: input.boost, accel: input.accel, inFlood, wet: weather.mix.wet, maxSpeed: model.max * 1.6, drift: player.drift,
   });
   updateCamera(dt, shake.update(dt, continuousShake, t));
   updateWeather(dt, camera, carVelocity, sky.daylight);
@@ -161,8 +215,12 @@ function loop() {
     if (h) distantHorn(h.pan, h.volume);
   }
 
+  const objective = missions.objective;
+  updateMissionHud(missions.active, objective, objective && bearingTo(player, objective.pos.x, objective.pos.z), player.altitude);
+  updateMinimap(player, objective);
+  updateProgress({ energy: player.energy, money: formatMoney(save.money), score: save.score });
   updateHud({
-    speed: player.speed,
+    speed: player.vel.length(),
     altitude: player.altitude,
     place: placeName(player.pos),
     clock: clockLabel(),
@@ -186,6 +244,6 @@ function loop() {
   }
 }
 loop();
-window.__game = { scene, renderer, camera, THREE, player, weather, forceLightning, get renderScale() { return renderScale; } };
+window.__game = { scene, renderer, camera, THREE, player, weather, forceLightning, missions, save, startNextMission: () => startNextMission(player), get renderScale() { return renderScale; } };
 
 addEventListener('resize', resize);
