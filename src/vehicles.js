@@ -1,10 +1,54 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { buildScooter, scooterOutfitCount } from './scooter.js';
 
 export const models = [
   { name: 'Tesla Roadster Rocket', color: '#c81e1e', w: 2.3, d: 4.9, bodyH: 0.62, clearance: 0.34, cabin: { h: 0.55, len: 0.36, z: 0.25 }, wheelR: 0.42, max: 44, style: 'roadster', electric: true },
   { name: 'Mercedes GLC 200', color: '#c9ced3', w: 2.35, d: 4.8, bodyH: 0.98, clearance: 0.46, cabin: { h: 0.82, len: 0.6, z: 0.2 }, wheelR: 0.46, max: 32, style: 'mercedes', electric: false },
   { name: 'VinFast VF8 Plus', color: '#2f6f9e', w: 2.4, d: 4.9, bodyH: 0.96, clearance: 0.46, cabin: { h: 0.8, len: 0.6, z: 0.22 }, wheelR: 0.47, max: 35, style: 'vinfast', electric: true },
+  {
+    id: 'ninja',
+    kind: 'scooter',
+    canFly: true,
+    stunt: true,
+    name: 'Ninja xe Lead',
+    short: 'Ninja Lead',
+    tagline: 'Di chuyển bất chấp · bay lộn vòng',
+    color: '#efe6cf',
+    mass: 172,
+    length: 1.86,
+    width: 0.72,
+    height: 1.72,
+    wheelbase: 1.27,
+    track: 0.1,
+    wheelRadius: 0.24,
+    cgHeight: 0.62,
+    rideHeight: 0.1,
+    power: 8400,
+    maxDriveForce: 560,
+    topSpeed: 25,
+    boost: 1.6,
+    brakeDecel: 7,
+    reverseSpeed: 1.5,
+    maxSteer: 0.72,
+    steerRate: 3.4,
+    steerSpeedFalloff: 0.75,
+    grip: 0.95,
+    cornerStiffness: 9,
+    frontGripBias: 1.04,
+    suspensionHz: 1.8,
+    suspensionDamping: 0.5,
+    rollStiffness: 0.6,
+    pitchStiffness: 0.03,
+    flight: { thrust: 9, maxSpeed: 46, climbRate: 8, yawRate: 1.5, response: 3.2, lateralGrip: 3.2, bank: 0.6 },
+    rocket: false,
+    fearRadius: 24,
+    plow: 0.9,
+    max: 25,
+    electric: false,
+    radius: 0.9,
+    style: 'scooter',
+  },
 ];
 
 const glass = new THREE.MeshStandardMaterial({ color: '#0c161d', metalness: 0.9, roughness: 0.05 });
@@ -85,19 +129,37 @@ function buildModel(c, root) {
   return info;
 }
 
+let scooterOutfit = 0;
+
 export function createPlayerCar(scene) {
   const group = new THREE.Group();
+  const tumble = new THREE.Group();
   const model = new THREE.Group();
-  group.add(model);
+  group.add(tumble);
+  tumble.add(model);
   scene.add(group);
-  const car = { group, model, info: null, setModel };
+  const car = { group, tumble, model, info: null, ninja: null, setModel };
 
   function setModel(id) {
+    if (car.ninja) {
+      for (const material of car.ninja.materials) {
+        material.map?.dispose();
+        material.dispose();
+      }
+      car.ninja = null;
+    }
     model.traverse((o) => {
       if (o.isMesh) o.geometry.dispose();
     });
     model.clear();
-    car.info = buildModel(models[id], model);
+    const spec = models[id];
+    if (spec.kind === 'scooter') {
+      car.ninja = buildScooter(model, spec, scooterOutfit, { headlight: headlightMat, taillight: taillightMat, tyre: tire });
+      car.info = car.ninja;
+      scooterOutfit = (scooterOutfit + 1) % scooterOutfitCount();
+    } else {
+      car.info = buildModel(spec, model);
+    }
   }
 
   setModel(0);
@@ -109,4 +171,5 @@ export function animateWheels(car, speed, steer, dt) {
     w.spin.rotation.x -= (speed * dt) / w.radius;
     if (w.front) w.pivot.rotation.y = steer * 0.42;
   }
+  if (car.ninja) car.ninja.steer.rotation.y = steer * 0.85;
 }

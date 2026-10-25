@@ -10,12 +10,12 @@ import { createPostFX } from './postfx.js';
 import { createNightLights } from './lights.js';
 import { createCarFx } from './carfx.js';
 import { shake } from './effects.js';
-import { startAudio, updateAudio, toggleMute, onMuteChange, distantHorn, thump } from './audio.js';
-import { player, toggleFly, resetPlayer, updatePlayer } from './gameplay.js';
+import { startAudio, updateAudio, toggleMute, onMuteChange, distantHorn, thump, chime } from './audio.js';
+import { player, toggleFly, resetPlayer, updatePlayer, requestStunt } from './gameplay.js';
 import { createMissions, updateMissions, startNextMission, cancelMission, missions, save, formatMoney, LANTERN_COUNT } from './missions.js';
 import { createMinimap, updateMinimap, bearingTo } from './minimap.js';
 import { updateHud, bindButtons, setFps, setQualityLabel, setMuteLabel, setToast, setPaused, setQualityButtons, updateMissionHud, updateProgress, setStats } from './hud.js';
-import { initInput, axis, keys } from './input.js';
+import { initInput, axis, keys, updateInput, cameraLook } from './input.js';
 import { settings, tier, setQuality, onQualityChange } from './settings.js';
 
 const scene = new THREE.Scene();
@@ -33,6 +33,15 @@ createWeather(scene, roads, roadMaterial);
 const nightLights = createNightLights(scene, car.group);
 const carFx = createCarFx(scene, car);
 carFx.attach(car.info);
+const carArg = new URLSearchParams(location.search).get('car');
+const carQuery = carArg === null ? -1 : +carArg;
+if (models[carQuery]) {
+  player.carId = carQuery;
+  car.setModel(carQuery);
+  carFx.attach(car.info);
+  const carSelect = document.getElementById('car');
+  if (carSelect) carSelect.value = String(carQuery);
+}
 const postfx = createPostFX(renderer, scene, camera);
 createMissions(scene);
 createMinimap(document.getElementById('minimap'));
@@ -108,6 +117,7 @@ initInput((code) => {
   if (code === 'Escape' || code === 'KeyP') togglePause();
   if (paused) return;
   if (code === 'Space') toggleFly();
+  if (code === 'KeyL') requestStunt();
   if (code === 'KeyN') startNextMission(player);
   if (code === 'KeyC') cycleCamera();
   if (code === 'KeyR') nextWeather();
@@ -124,10 +134,13 @@ bindButtons({
   onMute: toggleMute,
   onCar: (id) => {
     player.carId = id;
+    player.stuntRoll = 0;
+    player.stuntT = -1;
     car.setModel(id);
     carFx.attach(car.info);
     applyShading(car.group);
   },
+  onStunt: requestStunt,
   onReset: () => {
     resetPlayer();
     if (paused) togglePause();
@@ -141,18 +154,66 @@ bindButtons({
 });
 
 const clock = new THREE.Clock();
-const camTarget = new THREE.Vector3(), desired = new THREE.Vector3(), look = new THREE.Vector3(), carVelocity = new THREE.Vector3();
+const camTarget = new THREE.Vector3(), desired = new THREE.Vector3(), look = new THREE.Vector3(), carVelocity = new THREE.Vector3(), eyeWorld = new THREE.Vector3();
+
+function poseVehicle() {
+  const spec = models[player.carId];
+  const arm = (spec.height || 1.5) * 0.5;
+  const roll = player.stuntRoll;
+  car.tumble.rotation.z = roll;
+  car.tumble.position.set(arm * Math.sin(roll), arm * (1 - Math.cos(roll)), 0);
+  if (car.ninja) {
+    car.ninja.head.visible = camMode !== 1;
+    const glow = car.ninja.underglow;
+    const on = player.flying || roll !== 0;
+    glow.visible = on;
+    glow.material.opacity = on ? 0.28 : 0;
+  }
+}
 
 function updateCamera(dt, shakeOffset) {
   const { pos, heading, altitude } = player;
-  if (camMode === 0) desired.set(Math.sin(heading) * 13, 5.5 + altitude, Math.cos(heading) * 13);
-  else if (camMode === 1) desired.set(Math.sin(heading) * 0.4, 1.7 + altitude, Math.cos(heading) * 0.4);
-  else desired.set(0, 65 + altitude, 30);
+  const spec = models[player.carId];
+  const scooter = !!car.ninja;
+  const yaw = heading + cameraLook.yaw;
+  const lookPitch = cameraLook.pitch;
+  const near = camMode === 1 && scooter ? 0.05 : 0.3;
+  if (camera.near !== near) {
+    camera.near = near;
+    camera.updateProjectionMatrix();
+  }
+  camera.up.set(0, 1, 0);
+
+  if (camMode === 1 && scooter) {
+    car.group.updateMatrixWorld(true);
+    eyeWorld.copy(car.ninja.eye).applyMatrix4(car.model.matrixWorld);
+    const roll = player.roll + player.stuntRoll;
+    const cosPitch = Math.cos(lookPitch * 0.6);
+    camera.position.copy(eyeWorld);
+    camTarget.set(
+      eyeWorld.x - Math.sin(yaw) * 10 * cosPitch,
+      eyeWorld.y + Math.sin(lookPitch * 0.6) * 10 - 0.15,
+      eyeWorld.z - Math.cos(yaw) * 10 * cosPitch,
+    );
+    camera.up.set(-Math.sin(roll) * Math.cos(heading), Math.cos(roll), Math.sin(roll) * Math.sin(heading));
+    camera.lookAt(camTarget);
+    camera.position.add(shakeOffset);
+    return;
+  }
+
+  if (camMode === 0) {
+    const dist = scooter ? spec.length * 1.15 + 2.15 + (player.flying ? 2.4 : 0) : 13;
+    const camHeight = scooter ? 1.45 + (player.flying ? 0.7 : 0) : 5.5;
+    desired.set(Math.sin(yaw) * dist, camHeight + altitude + lookPitch * 8, Math.cos(yaw) * dist);
+  } else if (camMode === 1) desired.set(Math.sin(heading) * 0.4, 1.7 + altitude, Math.cos(heading) * 0.4);
+  else if (scooter) desired.set(Math.sin(cameraLook.yaw) * 4, 22 + altitude + lookPitch * 6, 14);
+  else desired.set(Math.sin(cameraLook.yaw) * 8, 65 + altitude + lookPitch * 10, 30);
   desired.x += pos.x;
   desired.z += pos.z;
   camera.position.lerp(desired, camMode === 1 ? 1 : Math.min(1, dt * (5 + Math.abs(player.speed) * 0.12)));
-  camTarget.set(pos.x, altitude + 1.4, pos.z);
-  if (camMode === 1) camTarget.add(look.set(-Math.sin(heading) * 30, 0, -Math.cos(heading) * 30));
+  camTarget.set(pos.x, altitude + (scooter && camMode === 0 ? spec.height * 0.55 : 1.4), pos.z);
+  if (camMode === 0 && scooter) camTarget.add(look.set(-Math.sin(heading) * 1.2, 0, -Math.cos(heading) * 1.2));
+  if (camMode === 1) camTarget.add(look.set(-Math.sin(yaw) * 30, lookPitch * 12, -Math.cos(yaw) * 30));
   camera.lookAt(camTarget);
   camera.position.add(shakeOffset);
 }
@@ -168,11 +229,15 @@ function loop() {
   }
   const dt = Math.min(raw, 0.045);
   const t = (simTime += dt);
-  const input = player.energy > 0 ? axis() : { ...axis(), boost: false };
+  updateInput(dt);
+  const input = axis();
+  if (player.energy <= 0) input.boost = false;
   const model = models[player.carId];
 
   const inFlood = isInFlood(player.pos, player.altitude);
   const { hit, landed } = updatePlayer(dt, input, { inFlood, wet: weather.mix.wet });
+  if (player.stuntEvent === 'start') shake.add(0.15);
+  if (player.stuntEvent === 'done') chime(true);
   if (hit) {
     const k = Math.min(1, hit.strength / 18);
     thump(0.3 + k);
@@ -186,6 +251,7 @@ function loop() {
   carVelocity.copy(player.vel);
   car.group.position.set(player.pos.x, player.altitude, player.pos.z);
   car.group.rotation.set(player.pitch + (player.flying ? Math.sin(t * 2) * 0.02 : 0), player.heading, player.roll);
+  poseVehicle();
   animateWheels(car, player.speed, input.turn, dt);
   updateTraffic(dt, t, isStorm() ? 0.6 : 1, player);
   updateMissions(dt, t, player);

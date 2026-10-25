@@ -9,7 +9,7 @@ export function createCarFx(scene, car) {
   const smoke = new Particles(scene, 260);
   const trail = new THREE.Vector3();
   const spray = new Particles(scene, 320);
-  const jets = createJets(car.group);
+  const jets = createJets(car.tumble || car.group);
   const nozzles = [];
   let wasInFlood = false, wasFlying = false, lastAltitude = 0, share = 1, emitDebt = 0;
 

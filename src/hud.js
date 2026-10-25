@@ -60,7 +60,7 @@ export function updateHud({ speed, altitude, place, trafficLabel, clock }) {
   set('clock', '🕒 ' + clock);
 }
 
-export function bindButtons({ onFly, onWeather, onCamera, onCar, onReset, onTime, onQuality, onMute, onMission, onPause, onCancel }) {
+export function bindButtons({ onFly, onWeather, onCamera, onCar, onReset, onTime, onQuality, onMute, onMission, onPause, onCancel, onStunt }) {
   $('sound').onclick = $('psound').onclick = onMute;
   $('missionBtn').onclick = onMission;
   $('pauseBtn').onclick = $('resume').onclick = onPause;
@@ -71,6 +71,8 @@ export function bindButtons({ onFly, onWeather, onCamera, onCar, onReset, onTime
   document.querySelectorAll('[data-q]').forEach((b) => (b.onclick = () => onQuality(b.dataset.q)));
   $('fly').onclick = onFly;
   $('mfly').onclick = onFly;
+  $('stunt').onclick = onStunt;
+  $('mstunt').onclick = onStunt;
   $('rain').onclick = onWeather;
   $('camera').onclick = onCamera;
   $('time').onclick = onTime;
