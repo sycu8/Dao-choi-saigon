@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export const models = [
-  { name: 'Tesla Roadster Rocket', color: '#c81e1e', w: 2.3, d: 4.9, bodyH: 0.62, clearance: 0.34, cabin: { h: 0.55, len: 0.36, z: 0.25 }, wheelR: 0.42, max: 44, style: 'roadster' },
-  { name: 'Mercedes GLC 200', color: '#c9ced3', w: 2.35, d: 4.8, bodyH: 0.98, clearance: 0.46, cabin: { h: 0.82, len: 0.6, z: 0.2 }, wheelR: 0.46, max: 32, style: 'mercedes' },
-  { name: 'VinFast VF8 Plus', color: '#2f6f9e', w: 2.4, d: 4.9, bodyH: 0.96, clearance: 0.46, cabin: { h: 0.8, len: 0.6, z: 0.22 }, wheelR: 0.47, max: 35, style: 'vinfast' },
+  { name: 'Tesla Roadster Rocket', color: '#c81e1e', w: 2.3, d: 4.9, bodyH: 0.62, clearance: 0.34, cabin: { h: 0.55, len: 0.36, z: 0.25 }, wheelR: 0.42, max: 44, style: 'roadster', electric: true },
+  { name: 'Mercedes GLC 200', color: '#c9ced3', w: 2.35, d: 4.8, bodyH: 0.98, clearance: 0.46, cabin: { h: 0.82, len: 0.6, z: 0.2 }, wheelR: 0.46, max: 32, style: 'mercedes', electric: false },
+  { name: 'VinFast VF8 Plus', color: '#2f6f9e', w: 2.4, d: 4.9, bodyH: 0.96, clearance: 0.46, cabin: { h: 0.8, len: 0.6, z: 0.22 }, wheelR: 0.47, max: 35, style: 'vinfast', electric: true },
 ];
 
 const glass = new THREE.MeshStandardMaterial({ color: '#0c161d', metalness: 0.9, roughness: 0.05 });

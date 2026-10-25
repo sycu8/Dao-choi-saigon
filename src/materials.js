@@ -37,6 +37,7 @@ export function syncTwins() {
   if (!lambert) return;
   for (const [std, t] of twins) {
     t.emissiveIntensity = std.emissiveIntensity;
+    t.color.copy(std.color);
     t.opacity = std.opacity;
     t.visible = std.visible;
   }
