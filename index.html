@@ -124,6 +124,10 @@ html[data-controls="touch"] .speed{font-size:18px}
 html[data-controls="touch"] .stat{font-size:11px}
 html[data-controls="touch"] #panel{padding:8px;font-size:12px;overflow:auto}
 html[data-controls="touch"] #panel select,html[data-controls="touch"] #panel button{padding:5px 6px;font-size:12px}
+html[data-controls="touch"] #panelFields{display:grid;grid-template-columns:1fr 1fr;gap:4px 6px;align-items:end}
+html[data-controls="touch"] #panelFields label{display:block;min-width:0;font-size:11px}
+html[data-controls="touch"] #panelFields .q{margin-top:0}
+html[data-controls="touch"] #panelFields select{display:block;width:100%;max-width:100%;margin-top:2px}
 html[data-controls="touch"] header,
 html[data-controls="touch"] .stat,
 html[data-controls="touch"] #toast,
@@ -143,6 +147,17 @@ html[data-hud="minimal"] #clock,
 html[data-hud="minimal"] .energy,
 html[data-hud="minimal"] #money,
 html[data-hud="minimal"] #fps{display:none !important}
+html[data-hud="minimal"] #panel{
+  visibility:hidden !important;
+  height:0 !important;
+  max-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border-width:0 !important;
+  overflow:hidden !important;
+  clip-path:inset(100%) !important;
+  pointer-events:none !important
+}
 html[data-hud="minimal"][data-flying="1"] #alt{display:block !important}
 html[data-hud="minimal"] #controlsHint{display:none}
 html[data-hud="minimal"] #controlsHint.on{display:flex}
@@ -150,8 +165,8 @@ html[data-hud="minimal"] .stat{padding:8px 10px}
 html[data-hud="minimal"] .speed{font-size:22px}
 @media (orientation:portrait){
   html[data-controls="touch"] #hud{padding-bottom:300px}
-  html[data-controls="touch"] #touchStack{display:flex;flex-direction:column;gap:8px;max-height:100%;min-height:0;padding:8px 8px 0;pointer-events:none}
-  html[data-controls="touch"] #touchFlow{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto;overscroll-behavior:contain;pointer-events:auto}
+  html[data-controls="touch"] #touchStack{display:flex;flex-direction:column;gap:8px;height:100%;max-height:100%;min-height:0;padding:8px 8px 0;overflow:hidden;pointer-events:none}
+  html[data-controls="touch"] #touchFlow{display:flex;flex-direction:column;gap:8px;flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;pointer-events:auto}
   html[data-controls="touch"] #topCluster{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
   html[data-controls="touch"] #controlBar{position:relative;top:auto;right:auto;bottom:auto;left:auto;transform:none;align-self:center;flex:0 0 auto;z-index:8}
   html[data-controls="touch"] header,
@@ -168,23 +183,30 @@ html[data-hud="minimal"] .speed{font-size:22px}
   html[data-controls="touch"] #controlsHint.on{width:auto;max-width:none}
   html[data-controls="touch"] #iosHint.on{width:auto;max-width:none}
   html[data-controls="touch"] #toast{max-width:none;white-space:normal;text-align:center}
-  html[data-controls="touch"] #panel{width:min(220px,100%);max-height:128px;align-self:flex-start}
+  html[data-controls="touch"] #panel{flex:1 1 auto;min-height:0;width:min(220px,100%);max-height:none;align-self:flex-start;overflow:auto}
+  html[data-controls="touch"] #mission.on{position:relative;top:auto;right:auto;bottom:auto;left:auto;transform:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;max-height:88px;overflow:auto;z-index:3}
   html[data-controls="touch"] #rotateHint{display:block;top:auto;bottom:212px;transform:translateX(-50%);max-width:min(260px,calc(100% - 24px))}
   html[data-controls="touch"] #minimap{width:56px;height:56px;top:auto;left:8px;bottom:140px}
-  html[data-controls="touch"] #mission.on{top:auto;bottom:300px;left:8px;right:8px;transform:none;min-width:0;max-width:none}
 }
 @media (orientation:landscape){
-  html[data-controls="touch"] #controlBar{top:8px;bottom:auto}
-  html[data-controls="touch"] header{top:8px;left:8px;right:auto;max-width:min(210px,calc(50vw - 150px));max-height:96px;padding:8px 10px;overflow:auto}
-  html[data-controls="touch"] .stat{top:60px;right:144px;left:auto;width:min(168px,calc(100% - 360px));max-width:min(168px,calc(100% - 360px));max-height:calc(100dvh - 252px);padding:4px 8px;overflow:hidden;pointer-events:none}
-  html[data-controls="touch"][data-hud="minimal"] .stat{top:60px;right:144px;width:auto;max-width:calc(100% - 360px)}
-  html[data-controls="touch"] #controlsHint.on{top:58px;bottom:auto;left:232px;right:330px;transform:none;width:auto;max-height:140px;overflow:auto}
-  html[data-ios-hint="on"][data-controls="touch"] #controlsHint.on{top:124px;max-height:68px}
-  html[data-controls="touch"] #iosHint.on{top:58px;left:232px;right:330px;transform:none;width:auto}
-  html[data-controls="touch"] #panel{position:absolute;left:8px;right:auto;top:108px;bottom:204px;width:min(200px,calc(50vw - 168px));max-height:none}
-  html[data-controls="touch"] #minimap{width:52px;height:52px;top:auto;left:8px;bottom:140px}
-  html[data-controls="touch"] #toast{top:200px;bottom:auto;left:50%;transform:translateX(-50%);max-width:min(200px,calc(100vw - 620px));white-space:normal;text-align:center;font-size:12px}
-  html[data-controls="touch"] #mission.on{top:auto;bottom:220px;left:50%;right:auto;transform:translateX(-50%);min-width:0;width:min(200px,calc(100vw - 620px));max-width:200px}
+  html[data-controls="touch"] #controlBar{top:8px;bottom:auto;z-index:8}
+  html[data-controls="touch"] header{top:8px;left:8px;right:auto;bottom:auto;width:min(248px,calc(50% - 140px));max-width:min(248px,calc(50% - 140px));max-height:none;height:auto;padding:8px 10px;overflow:visible}
+  html[data-controls="touch"] header h1{font-size:14px;line-height:1.2;margin:0 0 2px}
+  html[data-controls="touch"] header small,html[data-controls="touch"] #place{display:block;font-size:11px;line-height:1.3}
+  html[data-controls="touch"] .stat{top:8px;right:8px;left:auto;bottom:auto;width:min(196px,calc(50% - 150px));max-width:min(196px,calc(50% - 150px));max-height:calc(100dvh - 204px);padding:6px 8px;line-height:1.25;overflow:hidden;pointer-events:none}
+  html[data-controls="touch"] .stat .energy{margin-top:2px}
+  html[data-controls="touch"] .stat .money{margin-top:2px}
+  html[data-controls="touch"] .stat .bar{width:92px}
+  html[data-controls="touch"][data-hud="minimal"] .stat{top:8px;right:8px;width:auto;max-width:calc(50% - 150px);max-height:none}
+  html[data-controls="touch"] #panel{position:absolute;top:86px;left:8px;right:auto;bottom:auto;width:min(268px,calc(50% - 130px));max-height:calc(100dvh - 218px);overflow:auto}
+  html[data-controls="touch"] #panel .buttons{margin-top:6px}
+  html[data-controls="touch"] #panel .buttons button{padding:4px 6px;font-size:11px}
+  html[data-controls="touch"] #minimap{width:48px;height:48px;top:auto;left:140px;bottom:16px}
+  html[data-controls="touch"] #controlsHint.on{top:auto;bottom:56px;left:288px;right:156px;transform:none;width:auto;max-height:min(96px,calc(100dvh - 230px));overflow:auto;z-index:5}
+  html[data-controls="touch"] #iosHint.on{top:auto;bottom:164px;left:288px;right:156px;transform:none;width:auto;max-height:52px;overflow:auto;z-index:5}
+  html[data-controls="touch"] #toast{top:auto;bottom:12px;left:288px;right:156px;transform:none;width:auto;max-width:none;max-height:44px;overflow:hidden;white-space:normal;text-align:center;font-size:12px;z-index:4}
+  html[data-controls="touch"] #mission{z-index:2}
+  html[data-controls="touch"] #mission.on{top:60px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);min-width:0;width:min(280px,calc(100% - 520px));max-width:min(280px,calc(100% - 520px));max-height:calc(100dvh - 60px - 200px);overflow:auto;padding:8px 12px}
 }
 </style>
 </head>
@@ -228,20 +250,23 @@ html[data-hud="minimal"] .speed{font-size:22px}
   </div>
   <div id="toast">WASD lái · Space bay · Shift tăng tốc</div>
   <div id="panel">
-    <label>CHỌN XE </label>
-    <select id="car">
-      <option value="0">Tesla Roadster Rocket</option>
-      <option value="1">Mercedes GLC 200</option>
-      <option value="2">VinFast VF8 Plus</option>
-      <option value="3">Ninja xe Lead</option>
-    </select>
-    <label class="q">CHẤT LƯỢNG
-      <select id="quality">
-        <option value="low">Thấp</option>
-        <option value="medium">Trung bình</option>
-        <option value="high">Cao</option>
-      </select>
-    </label>
+    <div id="panelFields">
+      <label>CHỌN XE
+        <select id="car">
+          <option value="0">Tesla Roadster Rocket</option>
+          <option value="1">Mercedes GLC 200</option>
+          <option value="2">VinFast VF8 Plus</option>
+          <option value="3">Ninja xe Lead</option>
+        </select>
+      </label>
+      <label class="q">CHẤT LƯỢNG
+        <select id="quality">
+          <option value="low">Thấp</option>
+          <option value="medium">Trung bình</option>
+          <option value="high">Cao</option>
+        </select>
+      </label>
+    </div>
     <div class="buttons">
       <button id="fly">🚀 Bay / Hạ cánh</button>
       <button id="stunt">🌀 Lộn vòng</button>
@@ -255,14 +280,14 @@ html[data-hud="minimal"] .speed{font-size:22px}
     </div>
     <div class="hint">WASD / phím mũi tên: lái · Kéo chuột: xoay camera · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · L: lộn vòng (Ninja Lead, khi đang bay) · H: còi · N: nhiệm vụ · Esc/P: tạm dừng · C: camera · R: thời tiết · T: đổi giờ · M: tắt tiếng. Nút Bàn phím / Cảm ứng đổi chế độ và được nhớ lại. ⛶ bật toàn màn hình, 👁 thu gọn giao diện. Tìm 12 đèn lồng bí ẩn trên mái nhà, sạc pin ở trạm VinFast.</div>
   </div>
-  </div>
-  </div>
-  <canvas id="minimap"></canvas>
   <div id="mission">
     <div id="mtitle"></div>
     <div id="mtext"></div>
     <div class="mrow"><span id="marrow">▲</span><span id="mdist"></span><span id="mtimer"></span></div>
   </div>
+  </div>
+  </div>
+  <canvas id="minimap"></canvas>
   <div id="rotateHint">Xoay ngang máy để chơi dễ hơn</div>
   <div id="touch" aria-hidden="true">
     <div id="stick" role="application" aria-label="Cần lái, ga và phanh"><div id="stickKnob"></div></div>
