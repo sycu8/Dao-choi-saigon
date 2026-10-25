@@ -27,7 +27,7 @@ export function createCarFx(scene, car) {
       share = s;
     },
     // Returns the continuous camera-shake amplitude for this frame.
-    update(dt, t, { speed, heading, altitude, flying, boost, accel, inFlood, wet, maxSpeed }) {
+    update(dt, t, { speed, heading, altitude, flying, boost, accel, inFlood, wet, maxSpeed, drift = 0 }) {
       const s = Math.min(1, Math.abs(speed) / maxSpeed);
       const boosting = boost && Math.abs(speed) > 4;
       const power = flying ? 0.45 + (boosting ? 0.55 : 0) + (accel ? 0.15 : 0) : boosting ? 0.85 : 0;
@@ -51,12 +51,21 @@ export function createCarFx(scene, car) {
       }
 
       const grounded = altitude < 0.5;
+      if (grounded && drift > 0.35) {
+        const n = Math.floor(drift * 3 * share + Math.random());
+        for (let i = 0; i < n; i++) {
+          const sx = Math.random() < 0.5 ? -1 : 1;
+          p.copy(car.group.position).addScaledVector(side, sx * 1.0).addScaledVector(back, 1.4).setY(car.group.position.y + 0.3);
+          v.set((Math.random() - 0.5) * 2, 0.6 + Math.random(), (Math.random() - 0.5) * 2);
+          smoke.spawn(p, v, { life: 1.1, size0: 0.4, size1: 2.4, alpha: 0.25, color: SMOKE, drag: 1.5 });
+        }
+      }
       if (grounded && Math.abs(speed) > 3 && (inFlood || wet > 0.4)) {
         const rate = inFlood ? Math.min(6, 1 + Math.abs(speed) * 0.2) : wet * s * 1.5;
         const n = Math.floor(rate * share + Math.random());
         for (let i = 0; i < n; i++) {
           const sx = Math.random() < 0.5 ? -1 : 1;
-          p.copy(car.group.position).addScaledVector(side, sx * 1.15).addScaledVector(back, 1.5 * Math.sign(speed)).setY(0.25);
+          p.copy(car.group.position).addScaledVector(side, sx * 1.15).addScaledVector(back, 1.5 * Math.sign(speed)).setY(car.group.position.y + 0.25);
           v.copy(side).multiplyScalar(sx * (inFlood ? 3 + Math.random() * 4 : 1 + Math.random()))
             .addScaledVector(back, Math.abs(speed) * 0.25)
             .setY(inFlood ? 3 + Math.random() * 4 + s * 3 : 0.8 + Math.random());
