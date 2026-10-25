@@ -15,6 +15,9 @@ h1{font-size:19px;margin:0 0 3px}
 small{color:#a8c5d5}
 .stat{position:absolute;top:16px;right:16px;text-align:right;background:#081a2bd9;padding:14px;border-radius:16px}
 .speed{font-size:32px;font-weight:800}
+.fps{font-size:11px;color:#8fb3c6;margin-top:2px}
+.q{display:block;margin-top:8px;font-size:12px}
+.q select{padding:5px;margin-left:4px}
 #panel{position:absolute;bottom:20px;left:20px;pointer-events:auto;background:#091c2ce8;padding:15px;border-radius:17px;width:min(360px,calc(100vw - 40px));border:1px solid #ffffff26}
 select,button{background:#193d51;color:#fff;border:1px solid #4b7186;border-radius:9px;padding:9px;font:inherit;cursor:pointer}
 button:hover{background:#29617a}
@@ -28,11 +31,15 @@ button:hover{background:#29617a}
   h1{font-size:14px}
   .stat{top:8px;right:8px;padding:9px}
   .speed{font-size:22px}
-  #panel{bottom:8px;left:8px;width:220px;padding:9px}
+  #panel{bottom:8px;left:8px;width:196px;padding:8px;font-size:12px}
+  #panel select,#panel button{padding:5px 6px;font-size:12px}
+  .buttons{gap:4px;margin-top:6px}
+  .q{margin-top:5px}
+  .stat{font-size:12px}
   .hint{display:none}
   #mobile{display:grid;grid-template-columns:repeat(3,1fr);bottom:12px;right:8px}
   #mobile button{min-width:43px;min-height:47px;padding:4px}
-  #toast{top:76px;font-size:11px}
+  #toast{top:auto;bottom:250px;font-size:11px;max-width:92vw;white-space:normal;text-align:center}
 }
 </style>
 </head>
@@ -48,6 +55,8 @@ button:hover{background:#29617a}
     <div id="alt">Độ cao 0 m</div>
     <div id="weather">☀️ Nắng</div>
     <div id="traffic">🚦 Giao thông: Bình thường</div>
+    <div id="clock">🕒 15:30</div>
+    <div id="fps" class="fps">-- FPS</div>
   </div>
   <div id="toast">WASD lái · Space bay · Shift tăng tốc</div>
   <div id="panel">
@@ -57,13 +66,21 @@ button:hover{background:#29617a}
       <option value="1">Mercedes GLC 200</option>
       <option value="2">VinFast VF8 Plus</option>
     </select>
+    <label class="q">CHẤT LƯỢNG
+      <select id="quality">
+        <option value="low">Thấp</option>
+        <option value="medium">Trung bình</option>
+        <option value="high">Cao</option>
+      </select>
+    </label>
     <div class="buttons">
       <button id="fly">🚀 Bay / Hạ cánh</button>
       <button id="rain">🌦 Đổi thời tiết</button>
       <button id="camera">📷 Camera</button>
+      <button id="time">🌗 Ngày/Đêm</button>
       <button id="reset">↺ Reset</button>
     </div>
-    <div class="hint">WASD / phím mũi tên: lái · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · C: camera · R: thời tiết. Đường phố và giao thông được mô phỏng cách điệu.</div>
+    <div class="hint">WASD / phím mũi tên: lái · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · C: camera · R: thời tiết · T: đổi giờ. Đường phố và giao thông được mô phỏng cách điệu.</div>
   </div>
   <div id="mobile">
     <button data-key="KeyQ">↓</button><button data-key="KeyW">▲</button><button data-key="KeyE">↑</button>
