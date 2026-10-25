@@ -1,25 +1,31 @@
 import * as THREE from 'three';
-import { box } from './world.js';
+import { RIVER } from './world.js';
 import { createRain } from './effects.js';
 import { setToast, setWeatherLabel } from './hud.js';
 
 export const weatherList = [
-  { name: '☀️ Nắng', sky: '#9ec9e1', fog: 780, rain: 0, flood: 0 },
-  { name: '🌧️ Mưa rào', sky: '#8d9ea9', fog: 470, rain: 180, flood: 0.1 },
-  { name: '⛈️ Mưa lớn · Ngập cục bộ', sky: '#627a88', fog: 330, rain: 380, flood: 1 },
-  { name: '🌤️ Nhiều mây', sky: '#b4c3c9', fog: 640, rain: 0, flood: 0 },
+  { name: '☀️ Nắng', cloud: 0, fog: 780, rain: 0, flood: 0 },
+  { name: '🌧️ Mưa rào', cloud: 0.62, fog: 470, rain: 180, flood: 0.1 },
+  { name: '⛈️ Mưa lớn · Ngập cục bộ', cloud: 0.92, fog: 330, rain: 380, flood: 1 },
+  { name: '🌤️ Nhiều mây', cloud: 0.42, fog: 640, rain: 0, flood: 0 },
 ];
 
-export const weather = { index: 0, timer: 0 };
+export const weather = { index: 0, timer: 0, mix: { cloud: 0, fogFar: 780, rain: 0, flood: 0 } };
 const floods = [];
-let scene, rain;
+let rain;
 
-export function createWeather(targetScene, roads) {
-  scene = targetScene;
+export function createWeather(scene, roads) {
   rain = createRain(scene);
+  const floodMat = new THREE.MeshStandardMaterial({ color: '#4b6f7c', roughness: 0.04, metalness: 0.2, transparent: true, opacity: 0.82 });
   for (let i = 0; i < 13; i++) {
     const p = roads[(i * 5 + 3) % roads.length];
-    floods.push(box(20, 0.06, 45, new THREE.MeshLambertMaterial({ color: '#3d90b4', transparent: true, opacity: 0.58 }), p, 0.16, (i - 6) * 65, scene));
+    if (p > RIVER.west - 12 && p < RIVER.east + 12) continue;
+    const f = new THREE.Mesh(new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2), floodMat);
+    f.scale.set(9.5, 1, 22);
+    f.position.set(p, 0.05, (i - 6) * 65);
+    f.receiveShadow = true;
+    scene.add(f);
+    floods.push(f);
   }
   setWeather(0);
 }
@@ -27,9 +33,7 @@ export function createWeather(targetScene, roads) {
 export function setWeather(n) {
   weather.index = n;
   const w = weatherList[n];
-  scene.background.set(w.sky);
-  scene.fog.color.set(w.sky);
-  scene.fog.far = w.fog;
+  Object.assign(weather.mix, { cloud: w.cloud, fogFar: w.fog, rain: w.rain, flood: w.flood });
   rain.setAmount(w.rain);
   floods.forEach((f) => (f.visible = w.flood > 0));
   setWeatherLabel(w.name);
@@ -42,7 +46,7 @@ export const isStorm = () => weather.index === 2;
 
 export function isInFlood(pos, altitude) {
   if (!current().flood || altitude >= 1) return false;
-  return floods.some((f) => Math.abs(pos.x - f.position.x) < 12 && Math.abs(pos.z - f.position.z) < 25);
+  return floods.some((f) => Math.abs(pos.x - f.position.x) < 9.5 && Math.abs(pos.z - f.position.z) < 22);
 }
 
 export function updateWeather(dt, x, y, z) {

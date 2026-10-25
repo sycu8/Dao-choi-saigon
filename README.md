@@ -6,6 +6,14 @@ Single-player lightweight 3D free-roam game.
 
 Source lives in `src/` as ES modules (`main.js`, `world.js`, `vehicles.js`, `traffic.js`, `weather.js`, `effects.js`, `gameplay.js`, `hud.js`, `input.js`). `index.html` holds the markup/CSS and an import map that points `three` at `node_modules`, so after `npm install` you can serve the repo root directly (`python3 -m http.server 8080`) without building. `npm run build` bundles `src/main.js` with esbuild into `public/game.js` and writes `public/index.html`.
 
+Graphics modules: `sky.js` (Sky addon, day/night cycle, sun shadows, fog), `textures.js` (procedural canvas textures), `landmarks.js`, `postfx.js` (bloom, SMAA, vignette), `materials.js` and `settings.js` (quality tiers).
+
+### Quality tiers
+- **Thấp (Low)** — default on touch/narrow screens: Lambert shading, gradient sky, no shadows/post-processing, simple river.
+- **Trung bình / Cao (Medium / High)** — PBR materials with environment lighting, Sky addon, shadow maps, reflective `Water`, bloom + SMAA + vignette.
+
+All tiers use dynamic resolution (render scale 0.6–1.0) to hold frame rate. URL overrides for testing: `?q=low|medium|high` and `?hour=0-24`.
+
 Features: 3 selectable stylized vehicles, all flyable; procedural buildings, stylized recognizable landmarks; animated cars and motorbikes; randomized weather (every 75 seconds); localized flooded streets with slowdown; keyboard and touch controls; multiple cameras.
 
 Limitations: stylized procedural approximation, **not** geographically accurate OpenStreetMap geometry or licensed branded car 3D meshes. AI traffic is ambient and does not yet react to traffic lights, collisions, or jams. No live website deployment is included. Next phase: real OSM road/footprint ingestion, intersection AI, signals, water physics and optimized branded vehicle assets.
