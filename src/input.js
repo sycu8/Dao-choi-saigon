@@ -28,8 +28,8 @@ let knob = null;
 const dismissed = new Set();
 
 const HINTS = {
-  touch: 'Cảm ứng: kéo cần bên trái để lái, ga và phanh. Nút bên phải: ga, phanh, tăng tốc, lên, xuống, bay, lộn vòng và còi. Chạm nhiều ngón cùng lúc được.',
-  keyboard: 'Bàn phím: WASD hoặc phím mũi tên để lái. Shift tăng tốc, Space bay hoặc hạ cánh, Q/E xuống hoặc lên, L lộn vòng khi đang bay, H còi. Kéo chuột để xoay camera.',
+  touch: 'Cảm ứng: kéo cần bên trái để lái, ga và phanh. Nút bên phải: ga, phanh, tăng tốc, lên, xuống, bay, lộn vòng và còi. ⛶ toàn màn hình, 👁 thu gọn giao diện. Chạm nhiều ngón cùng lúc được.',
+  keyboard: 'Bàn phím: WASD hoặc phím mũi tên để lái. Shift tăng tốc, Space bay hoặc hạ cánh, Q/E xuống hoặc lên, L lộn vòng khi đang bay, H còi. Kéo chuột để xoay camera. Nút 👁 thu gọn giao diện.',
 };
 const TOASTS = {
   touch: 'Cần trái để lái · nút phải để ga, bay và lộn vòng',
@@ -203,7 +203,8 @@ function syncChrome() {
   const box = document.getElementById('controlsHint');
   if (text) text.textContent = HINTS[scheme];
   if (box) {
-    const show = hintForced || !dismissed.has(scheme);
+    const minimal = document.documentElement.dataset.hud === 'minimal';
+    const show = hintForced || (!minimal && !dismissed.has(scheme));
     box.classList.toggle('on', show);
     box.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
@@ -226,6 +227,12 @@ function applyScheme(next, { persist }) {
     cameraLook.pitch = 0;
   }
   syncChrome();
+  document.documentElement.dispatchEvent(new CustomEvent('xebay-controls'));
+}
+
+export function onHudModeChange() {
+  if (document.documentElement.dataset.hud === 'minimal') hintForced = false;
+  syncChrome();
 }
 
 function toggleScheme() {
@@ -236,7 +243,7 @@ function toggleScheme() {
 function installGestureGuards() {
   const blockMove = (e) => {
     const el = e.target;
-    if (el && el.closest && el.closest('#panel, .pcard, #controlsHint')) return;
+    if (el && el.closest && el.closest('#panel, .pcard, #controlsHint, #touchFlow, #iosHint')) return;
     e.preventDefault();
   };
   document.addEventListener('touchmove', blockMove, { passive: false });

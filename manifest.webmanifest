@@ -1,0 +1,12 @@
+{
+  "name": "Xe Bay Sài Gòn",
+  "short_name": "Xe Bay",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#101923",
+  "theme_color": "#101923"
+}

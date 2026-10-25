@@ -16,6 +16,7 @@ import { createMissions, updateMissions, startNextMission, cancelMission, missio
 import { createMinimap, updateMinimap, bearingTo } from './minimap.js';
 import { updateHud, bindButtons, setFps, setQualityLabel, setMuteLabel, setToast, setPaused, setQualityButtons, updateMissionHud, updateProgress, setStats } from './hud.js';
 import { initInput, axis, keys, updateInput, cameraLook } from './input.js';
+import { initDisplay } from './display.js';
 import { settings, tier, setQuality, onQualityChange } from './settings.js';
 
 const scene = new THREE.Scene();
@@ -124,6 +125,7 @@ initInput((code) => {
   if (code === 'KeyT') skipTime();
   if (code === 'KeyM') toggleMute();
 });
+initDisplay();
 onMuteChange(setMuteLabel);
 bindButtons({
   onFly: toggleFly,

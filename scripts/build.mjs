@@ -1,11 +1,11 @@
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'esbuild';
 
 const html = readFileSync('index.html', 'utf8');
 const sources = readdirSync('src').filter((f) => f.endsWith('.js')).map((f) => readFileSync(join('src', f), 'utf8'));
 const all = [html, ...sources].join('\n');
-for (const text of ['Tesla Roadster Rocket', 'Mercedes GLC 200', 'VinFast VF8 Plus', 'Ninja Lead', 'Ninja xe Lead', 'setWeather', 'toggleFly']) {
+for (const text of ['Tesla Roadster Rocket', 'Mercedes GLC 200', 'VinFast VF8 Plus', 'Ninja Lead', 'Ninja xe Lead', 'setWeather', 'toggleFly', 'apple-mobile-web-app-capable', 'Thêm vào Màn hình chính', 'xebay.hud', 'manifest.webmanifest']) {
   if (!all.includes(text)) throw new Error(`Missing feature: ${text}`);
 }
 
@@ -14,6 +14,7 @@ const entry = html.match(/<script type="module" src="\.\/src\/main\.js"><\/scrip
 if (!entry) throw new Error('Game entry script (./src/main.js) not found in index.html');
 
 mkdirSync('public', { recursive: true });
+copyFileSync('manifest.webmanifest', join('public', 'manifest.webmanifest'));
 await build({
   entryPoints: ['src/main.js'],
   bundle: true,
