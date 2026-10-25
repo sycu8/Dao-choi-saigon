@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Xe Bay Sài Gòn — Free Roam</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101923;color:#fff;font:14px system-ui,Arial;overflow:hidden}
+canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+header{position:absolute;top:16px;left:18px;background:#081a2bd9;padding:14px 18px;border:1px solid #ffffff26;border-radius:16px;backdrop-filter:blur(12px)}
+h1{font-size:19px;margin:0 0 3px}
+small{color:#a8c5d5}
+.stat{position:absolute;top:16px;right:16px;text-align:right;background:#081a2bd9;padding:14px;border-radius:16px}
+.speed{font-size:32px;font-weight:800}
+#panel{position:absolute;bottom:20px;left:20px;pointer-events:auto;background:#091c2ce8;padding:15px;border-radius:17px;width:min(360px,calc(100vw - 40px));border:1px solid #ffffff26}
+select,button{background:#193d51;color:#fff;border:1px solid #4b7186;border-radius:9px;padding:9px;font:inherit;cursor:pointer}
+button:hover{background:#29617a}
+.buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.hint{font-size:12px;color:#b7d3e1;line-height:1.7;margin-top:8px}
+#toast{position:absolute;top:100px;left:50%;transform:translateX(-50%);background:#102f43dd;padding:10px 15px;border-radius:20px;white-space:nowrap}
+#mobile{display:none;position:absolute;bottom:25px;right:16px;pointer-events:auto;gap:8px}
+#mobile button{min-width:55px;min-height:54px;background:#17384ac9;touch-action:none}
+@media(max-width:760px){
+  header{top:8px;left:8px;padding:9px}
+  h1{font-size:14px}
+  .stat{top:8px;right:8px;padding:9px}
+  .speed{font-size:22px}
+  #panel{bottom:8px;left:8px;width:220px;padding:9px}
+  .hint{display:none}
+  #mobile{display:grid;grid-template-columns:repeat(3,1fr);bottom:12px;right:8px}
+  #mobile button{min-width:43px;min-height:47px;padding:4px}
+  #toast{top:76px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="hud">
+  <header>
+    <h1>🚀 XE BAY SÀI GÒN</h1>
+    <small>3D Free Roam · Trung tâm TP.HCM</small>
+    <div id="place">📍 Nguyễn Huệ · Quận 1</div>
+  </header>
+  <div class="stat">
+    <div class="speed"><span id="speed">0</span> <small>km/h</small></div>
+    <div id="alt">Độ cao 0 m</div>
+    <div id="weather">☀️ Nắng</div>
+    <div id="traffic">🚦 Giao thông: Bình thường</div>
+  </div>
+  <div id="toast">WASD lái · Space bay · Shift tăng tốc</div>
+  <div id="panel">
+    <label>CHỌN XE </label>
+    <select id="car">
+      <option value="0">Tesla Roadster Rocket</option>
+      <option value="1">Mercedes GLC 200</option>
+      <option value="2">VinFast VF8 Plus</option>
+    </select>
+    <div class="buttons">
+      <button id="fly">🚀 Bay / Hạ cánh</button>
+      <button id="rain">🌦 Đổi thời tiết</button>
+      <button id="camera">📷 Camera</button>
+      <button id="reset">↺ Reset</button>
+    </div>
+    <div class="hint">WASD / phím mũi tên: lái · Shift: boost · Space: bay / hạ cánh · Q/E: xuống/lên khi bay · C: camera · R: thời tiết. Đường phố và giao thông được mô phỏng cách điệu.</div>
+  </div>
+  <div id="mobile">
+    <button data-key="KeyQ">↓</button><button data-key="KeyW">▲</button><button data-key="KeyE">↑</button>
+    <button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button>
+    <button data-key="ShiftLeft">⚡</button><button id="mfly">🚀</button><button data-key="Space">✦</button>
+  </div>
+</div>
+<!-- Dev only: build.mjs removes the import map and swaps in the bundled /game.js. -->
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
