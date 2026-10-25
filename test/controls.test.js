@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { axis, detectControlScheme, keys, readAxes, resolveControlScheme } from '../src/input.js';
+import { axis, detectControlScheme, keys, readAxes, resolveControlScheme, shouldReleaseHold, visibleTouchActions } from '../src/input.js';
 import { STUNT_MIN_ALT, STUNT_TIME, stuntFinished, stuntGate, stuntRollAt } from '../src/stunt.js';
 import { models } from '../src/vehicles.js';
 
@@ -103,4 +104,48 @@ test('a loop starts only in the air and eases through one turn', () => {
   assert.ok(Math.abs(stuntRollAt(STUNT_TIME, -1) + Math.PI * 2) < 1e-6);
   assert.equal(stuntFinished(STUNT_TIME), true);
   assert.equal(stuntFinished(STUNT_TIME - 0.01), false);
+});
+
+test('touch actions drop throttle and brake and show climb only in the air', () => {
+  assert.deepEqual(visibleTouchActions(), ['boost', 'fly', 'horn']);
+  assert.deepEqual(visibleTouchActions({ flying: true }), ['climb', 'descend', 'boost', 'fly', 'horn']);
+  assert.deepEqual(visibleTouchActions({ flying: false, canStunt: true }), ['boost', 'fly', 'horn']);
+  assert.deepEqual(visibleTouchActions({ flying: true, canStunt: true }), ['climb', 'descend', 'boost', 'fly', 'stunt', 'horn']);
+  for (const actions of [visibleTouchActions(), visibleTouchActions({ flying: true, canStunt: true })]) {
+    assert.equal(actions.includes('throttle'), false);
+    assert.equal(actions.includes('brake'), false);
+  }
+});
+
+test('a held touch releases on its own pointer and survives a different one', () => {
+  assert.equal(shouldReleaseHold(null, 1, 'pointerup'), false);
+  assert.equal(shouldReleaseHold(3, 3, 'pointerup'), true);
+  assert.equal(shouldReleaseHold(3, 9, 'pointerup'), false);
+  assert.equal(shouldReleaseHold(3, 3, 'pointercancel'), true);
+  assert.equal(shouldReleaseHold(3, 9, 'lostpointercapture'), false);
+  assert.equal(shouldReleaseHold(3, 3, 'lostpointercapture'), true);
+  assert.equal(shouldReleaseHold(3, null, 'touchend'), true);
+  assert.equal(shouldReleaseHold(3, null, 'touchcancel'), true);
+  assert.equal(shouldReleaseHold(3, 3, 'click'), false);
+  assert.equal(shouldReleaseHold(0, 0, 'pointerup'), true);
+});
+
+test('the touch pad markup has no duplicate throttle or brake buttons', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const start = html.indexOf('id="touchActions"');
+  const end = html.indexOf('id="pause"');
+  const pad = html.slice(start, end);
+  assert.equal(pad.includes('data-key="KeyW"'), false);
+  assert.equal(pad.includes('data-key="KeyS"'), false);
+  assert.equal(pad.includes('aria-label="Ga"'), false);
+  assert.equal(pad.includes('aria-label="Phanh"'), false);
+  assert.match(pad, /data-action="climb"[^>]*data-need="flying"[^>]*data-key="KeyE"/);
+  assert.match(pad, /data-action="descend"[^>]*data-need="flying"[^>]*data-key="KeyQ"/);
+  assert.match(pad, /data-action="stunt"[^>]*data-need="stunt"/);
+  assert.match(pad, /data-action="boost"[^>]*data-key="ShiftLeft"/);
+  assert.match(pad, /data-action="horn"[^>]*data-key="KeyH"/);
+  assert.match(pad, /id="mfly"/);
+  assert.match(html, /touch-action:\s*none/);
+  assert.match(html, /html\[data-hud="minimal"\]\[data-flying="1"\] #alt\{display:block !important\}/);
+  assert.match(html, /pointer-events:none/);
 });
