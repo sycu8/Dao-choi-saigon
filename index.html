@@ -101,11 +101,17 @@ html[data-fullscreen="1"] #fullscreenToggle .exit{display:block}
 #iosHint.on{display:flex;position:absolute;top:60px;left:50%;transform:translateX(-50%)}
 #iosHint p{margin:0;font-size:13px;line-height:1.35}
 #rotateHint{display:none;position:absolute;z-index:6;left:50%;top:46%;transform:translate(-50%,-50%);max-width:min(280px,78vw);text-align:center;padding:12px 14px;border-radius:16px;background:rgba(8,26,43,.5);border:1px solid rgba(255,255,255,.28);pointer-events:none}
-#touch{display:none;position:absolute;inset:0;z-index:4;pointer-events:none}
+#touch{display:none;position:absolute;inset:0;z-index:7;pointer-events:none}
 #stick{position:absolute;left:12px;bottom:12px;width:120px;height:120px;border-radius:50%;background:rgba(23,56,74,.42);border:2px solid rgba(255,255,255,.38);touch-action:none;pointer-events:auto}
-#stickKnob{position:absolute;left:34px;top:34px;width:52px;height:52px;border-radius:50%;background:rgba(232,246,255,.62);border:1px solid rgba(255,255,255,.75)}
-#touchActions{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(3,48px);gap:8px;touch-action:none;pointer-events:auto}
-#touchActions button{min-width:48px;min-height:48px;padding:0;font-size:18px;background:rgba(23,56,74,.45);border-color:rgba(255,255,255,.35);touch-action:none}
+#stickKnob{position:absolute;left:34px;top:34px;width:52px;height:52px;border-radius:50%;background:rgba(232,246,255,.62);border:1px solid rgba(255,255,255,.75);pointer-events:none}
+#touchActions{position:absolute;right:12px;bottom:12px;z-index:2;display:grid;grid-template-columns:repeat(2,52px);grid-auto-rows:52px;gap:8px;touch-action:none;pointer-events:none}
+#touchActions button{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;min-width:52px;min-height:52px;padding:0;font-size:22px;line-height:1;background:rgba(23,56,74,.45);border-color:rgba(255,255,255,.35);touch-action:none;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+#touchActions [data-need]{display:none}
+html[data-flying="1"] #touchActions [data-need="flying"]{display:inline-flex}
+html[data-flying="1"][data-stunt="1"] #touchActions [data-need="stunt"]{display:inline-flex}
+#mfly .air{display:none}
+html[data-flying="1"] #mfly .ground{display:none}
+html[data-flying="1"] #mfly .air{display:inline}
 #touchActions button.down,#touchActions button:active{background:rgba(47,134,168,.72)}
 #touch,#stick,#touchActions,#touchActions button,#controlBar button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 html[data-controls="keyboard"] canvas{cursor:grab}
@@ -118,6 +124,13 @@ html[data-controls="touch"] .speed{font-size:18px}
 html[data-controls="touch"] .stat{font-size:11px}
 html[data-controls="touch"] #panel{padding:8px;font-size:12px;overflow:auto}
 html[data-controls="touch"] #panel select,html[data-controls="touch"] #panel button{padding:5px 6px;font-size:12px}
+html[data-controls="touch"] header,
+html[data-controls="touch"] .stat,
+html[data-controls="touch"] #toast,
+html[data-controls="touch"] #minimap,
+html[data-controls="touch"] #mission,
+html[data-controls="touch"] #rotateHint,
+html[data-controls="touch"] #place{pointer-events:none}
 html[data-hud="minimal"] header,
 html[data-hud="minimal"] #panel,
 html[data-hud="minimal"] #minimap,
@@ -130,6 +143,7 @@ html[data-hud="minimal"] #clock,
 html[data-hud="minimal"] .energy,
 html[data-hud="minimal"] #money,
 html[data-hud="minimal"] #fps{display:none !important}
+html[data-hud="minimal"][data-flying="1"] #alt{display:block !important}
 html[data-hud="minimal"] #controlsHint{display:none}
 html[data-hud="minimal"] #controlsHint.on{display:flex}
 html[data-hud="minimal"] .stat{padding:8px 10px}
@@ -162,15 +176,15 @@ html[data-hud="minimal"] .speed{font-size:22px}
 @media (orientation:landscape){
   html[data-controls="touch"] #controlBar{top:8px;bottom:auto}
   html[data-controls="touch"] header{top:8px;left:8px;right:auto;max-width:min(210px,calc(50vw - 150px));max-height:96px;padding:8px 10px;overflow:auto}
-  html[data-controls="touch"] .stat{top:8px;right:8px;left:auto;width:min(168px,calc(50vw - 150px));max-width:min(168px,calc(50vw - 150px));max-height:calc(100dvh - 184px);padding:6px 8px;overflow:auto}
-  html[data-controls="touch"][data-hud="minimal"] .stat{width:auto}
-  html[data-controls="touch"] #controlsHint.on{top:58px;bottom:auto;width:min(300px,calc(100vw - 520px));max-height:140px;overflow:auto}
+  html[data-controls="touch"] .stat{top:60px;right:144px;left:auto;width:min(168px,calc(100% - 360px));max-width:min(168px,calc(100% - 360px));max-height:calc(100dvh - 252px);padding:4px 8px;overflow:hidden;pointer-events:none}
+  html[data-controls="touch"][data-hud="minimal"] .stat{top:60px;right:144px;width:auto;max-width:calc(100% - 360px)}
+  html[data-controls="touch"] #controlsHint.on{top:58px;bottom:auto;left:232px;right:330px;transform:none;width:auto;max-height:140px;overflow:auto}
   html[data-ios-hint="on"][data-controls="touch"] #controlsHint.on{top:124px;max-height:68px}
-  html[data-controls="touch"] #iosHint.on{top:58px;width:min(300px,calc(100vw - 520px))}
+  html[data-controls="touch"] #iosHint.on{top:58px;left:232px;right:330px;transform:none;width:auto}
   html[data-controls="touch"] #panel{position:absolute;left:8px;right:auto;top:108px;bottom:204px;width:min(200px,calc(50vw - 168px));max-height:none}
   html[data-controls="touch"] #minimap{width:52px;height:52px;top:auto;left:8px;bottom:140px}
-  html[data-controls="touch"] #toast{top:200px;bottom:auto;left:50%;transform:translateX(-50%);max-width:min(220px,calc(100vw - 560px));white-space:normal;text-align:center;font-size:12px}
-  html[data-controls="touch"] #mission.on{top:auto;bottom:220px;left:50%;right:auto;transform:translateX(-50%);min-width:0;width:min(280px,calc(100vw - 460px));max-width:280px}
+  html[data-controls="touch"] #toast{top:200px;bottom:auto;left:50%;transform:translateX(-50%);max-width:min(200px,calc(100vw - 620px));white-space:normal;text-align:center;font-size:12px}
+  html[data-controls="touch"] #mission.on{top:auto;bottom:220px;left:50%;right:auto;transform:translateX(-50%);min-width:0;width:min(200px,calc(100vw - 620px));max-width:200px}
 }
 </style>
 </head>
@@ -253,14 +267,12 @@ html[data-hud="minimal"] .speed{font-size:22px}
   <div id="touch" aria-hidden="true">
     <div id="stick" role="application" aria-label="Cần lái, ga và phanh"><div id="stickKnob"></div></div>
     <div id="touchActions">
-      <button type="button" data-key="KeyE" aria-label="Lên">↑</button>
-      <button type="button" data-key="KeyW" aria-label="Ga">▲</button>
-      <button type="button" data-key="ShiftLeft" aria-label="Tăng tốc">⚡</button>
-      <button type="button" data-key="KeyQ" aria-label="Xuống">↓</button>
-      <button type="button" data-key="KeyS" aria-label="Phanh">▼</button>
-      <button type="button" id="mfly" aria-label="Bay hoặc hạ cánh">🚀</button>
-      <button type="button" id="mstunt" aria-label="Lộn vòng">🌀</button>
-      <button type="button" data-key="KeyH" aria-label="Còi">📯</button>
+      <button type="button" data-action="climb" data-need="flying" data-key="KeyE" aria-label="Bay lên">↑</button>
+      <button type="button" data-action="descend" data-need="flying" data-key="KeyQ" aria-label="Bay xuống">↓</button>
+      <button type="button" data-action="boost" data-key="ShiftLeft" aria-label="Tăng tốc">⚡</button>
+      <button type="button" id="mfly" data-action="fly" aria-label="Bay hoặc hạ cánh"><span class="ground" aria-hidden="true">🚀</span><span class="air" aria-hidden="true">🛬</span></button>
+      <button type="button" id="mstunt" data-action="stunt" data-need="stunt" aria-label="Lộn vòng">🌀</button>
+      <button type="button" data-action="horn" data-key="KeyH" aria-label="Còi">📯</button>
     </div>
   </div>
 </div>

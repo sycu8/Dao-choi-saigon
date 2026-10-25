@@ -1,8 +1,15 @@
+import { bindInstantPress } from './input.js';
+
 const $ = (id) => document.getElementById(id);
 
 export const setToast = (text) => ($('toast').textContent = text);
 export const setWeatherLabel = (text) => ($('weather').textContent = text);
-export const setFlyLabel = (flying) => ($('fly').textContent = flying ? '🛬 Hạ cánh' : '🚀 Bay');
+export const setFlyLabel = (flying) => {
+  $('fly').textContent = flying ? '🛬 Hạ cánh' : '🚀 Bay';
+  const pad = $('mfly');
+  if (pad) pad.setAttribute('aria-label', flying ? 'Hạ cánh' : 'Bay');
+  document.documentElement.dataset.flying = flying ? '1' : '0';
+};
 export const setFps = (fps) => ($('fps').textContent = Math.round(fps) + ' FPS');
 export const setQualityLabel = (name) => ($('quality').value = name);
 export const setMuteLabel = (muted) => {
@@ -70,9 +77,9 @@ export function bindButtons({ onFly, onWeather, onCamera, onCar, onReset, onTime
   $('preset').onclick = onReset;
   document.querySelectorAll('[data-q]').forEach((b) => (b.onclick = () => onQuality(b.dataset.q)));
   $('fly').onclick = onFly;
-  $('mfly').onclick = onFly;
   $('stunt').onclick = onStunt;
-  $('mstunt').onclick = onStunt;
+  bindInstantPress($('mfly'), onFly);
+  bindInstantPress($('mstunt'), onStunt);
   $('rain').onclick = onWeather;
   $('camera').onclick = onCamera;
   $('time').onclick = onTime;

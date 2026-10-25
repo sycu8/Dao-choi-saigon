@@ -25,14 +25,15 @@ let scheme = 'keyboard';
 let hintForced = false;
 let canvas = null;
 let knob = null;
+let touchFlying = false;
 const dismissed = new Set();
 
 const HINTS = {
-  touch: 'Cảm ứng: kéo cần bên trái để lái, ga và phanh. Nút bên phải: ga, phanh, tăng tốc, lên, xuống, bay, lộn vòng và còi. ⛶ toàn màn hình, 👁 thu gọn giao diện. Chạm nhiều ngón cùng lúc được.',
+  touch: 'Cảm ứng: kéo cần trái để lái, ga và phanh. Nút phải: tăng tốc, bay và còi. Khi bay thêm lên và xuống; Ninja Lead có lộn vòng. ⛶ toàn màn hình, 👁 thu gọn giao diện.',
   keyboard: 'Bàn phím: WASD hoặc phím mũi tên để lái. Shift tăng tốc, Space bay hoặc hạ cánh, Q/E xuống hoặc lên, L lộn vòng khi đang bay, H còi. Kéo chuột để xoay camera. Nút 👁 thu gọn giao diện.',
 };
 const TOASTS = {
-  touch: 'Cần trái để lái · nút phải để ga, bay và lộn vòng',
+  touch: 'Cần trái lái, ga, phanh · nút phải tăng tốc và bay',
   keyboard: 'WASD lái · Space bay · Shift tăng tốc · L lộn vòng',
 };
 const SCHEME_LABEL = { touch: 'Cảm ứng', keyboard: 'Bàn phím' };
@@ -68,6 +69,28 @@ function clampStick(dx, dy, radius, out) {
 }
 
 // state.stickX is +right. Turn is +left, matching A / ArrowLeft.
+const HOLD_RELEASE = new Set(['pointerup', 'pointercancel', 'lostpointercapture', 'touchend', 'touchcancel']);
+
+// Ground keeps boost, takeoff and horn. Climb and descend appear only in the air.
+// Roll appears only for a vehicle that can stunt, and only while it is flying.
+// Throttle and brake stay on the stick, so they are never separate buttons.
+export function visibleTouchActions({ flying = false, canStunt = false } = {}) {
+  const actions = [];
+  if (flying) actions.push('climb', 'descend');
+  actions.push('boost', 'fly');
+  if (flying && canStunt) actions.push('stunt');
+  actions.push('horn');
+  return actions;
+}
+
+// A lost pointer used to leave the button stuck, so the next press was ignored.
+// Release when this pointer ends, or when the event cannot name a pointer.
+// A different pointer must not cancel the one that is still held.
+export function shouldReleaseHold(activeId, eventId, type) {
+  if (activeId == null || !HOLD_RELEASE.has(type)) return false;
+  return eventId == null || eventId === activeId;
+}
+
 export function readAxes(state, out) {
   let turn = (state.left ? 1 : 0) - (state.right ? 1 : 0);
   let accel = !!state.forward;
@@ -263,18 +286,42 @@ function installGestureGuards() {
   }, { passive: false });
 }
 
+function eventPointerId(e) {
+  if (!e) return null;
+  if (e.pointerId !== undefined) return e.pointerId;
+  const touch = e.changedTouches && e.changedTouches[0];
+  return touch ? touch.identifier : null;
+}
+
+function preventGesture(e) {
+  if (e.cancelable) e.preventDefault();
+}
+
+function bindTouchGuard(el) {
+  el.addEventListener('touchstart', preventGesture, { passive: false });
+  el.addEventListener('touchend', preventGesture, { passive: false });
+  el.addEventListener('touchcancel', preventGesture, { passive: false });
+}
+
+function releaseHoldButton(button) {
+  if (button._pid == null) return;
+  button._pid = null;
+  button.classList.remove('down');
+  if (button.dataset.key) releaseKey(button.dataset.key);
+}
+
 function bindHoldButton(button) {
   const code = button.dataset.key;
+  bindTouchGuard(button);
   const end = (e) => {
-    if (button._pid == null) return;
-    if (e && e.pointerId !== undefined && e.pointerId !== button._pid) return;
-    button._pid = null;
-    button.classList.remove('down');
-    releaseKey(code);
+    if (!shouldReleaseHold(button._pid, eventPointerId(e), e.type)) return;
+    if (e.cancelable && (e.type === 'touchend' || e.type === 'touchcancel')) e.preventDefault();
+    releaseHoldButton(button);
   };
   button.addEventListener('pointerdown', (e) => {
-    if (button._pid != null) return;
-    e.preventDefault();
+    if (e.button != null && e.button !== 0) return;
+    if (e.cancelable) e.preventDefault();
+    if (button._pid != null) releaseHoldButton(button);
     button._pid = e.pointerId;
     button.classList.add('down');
     try { button.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
@@ -283,6 +330,36 @@ function bindHoldButton(button) {
   button.addEventListener('pointerup', end);
   button.addEventListener('pointercancel', end);
   button.addEventListener('lostpointercapture', end);
+  button.addEventListener('touchend', end, { passive: false });
+  button.addEventListener('touchcancel', end, { passive: false });
+}
+
+export function bindInstantPress(button, onPress) {
+  if (!button || !onPress) return;
+  bindTouchGuard(button);
+  const clear = () => button.classList.remove('down');
+  button.addEventListener('pointerdown', (e) => {
+    if (e.button != null && e.button !== 0) return;
+    if (e.cancelable) e.preventDefault();
+    button.classList.add('down');
+    try { button.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+    onPress();
+  });
+  button.addEventListener('pointerup', clear);
+  button.addEventListener('pointercancel', clear);
+  button.addEventListener('lostpointercapture', clear);
+}
+
+export function syncTouchContext({ flying = false, canStunt = false } = {}) {
+  const root = document.documentElement;
+  const fly = flying ? '1' : '0';
+  const stunt = flying && canStunt ? '1' : '0';
+  if (root.dataset.flying !== fly) root.dataset.flying = fly;
+  if (root.dataset.stunt !== stunt) root.dataset.stunt = stunt;
+  if (touchFlying && !flying) {
+    document.querySelectorAll('#touchActions [data-need="flying"][data-key]').forEach(releaseHoldButton);
+  }
+  touchFlying = !!flying;
 }
 
 function bindStick(stick) {
@@ -293,9 +370,12 @@ function bindStick(stick) {
     STICK.active = true;
     if (knob) knob.style.transform = `translate3d(${(STICK.x * stickPtr.radius).toFixed(2)}px,${(STICK.y * stickPtr.radius).toFixed(2)}px,0)`;
   };
+  bindTouchGuard(stick);
   stick.addEventListener('pointerdown', (e) => {
-    if (stickPtr.id !== -1) return;
-    e.preventDefault();
+    if (e.button != null && e.button !== 0) return;
+    if (e.cancelable) e.preventDefault();
+    if (stickPtr.id !== -1 && stickPtr.id !== e.pointerId) resetStick();
+    if (stickPtr.id === e.pointerId) return;
     const rect = stick.getBoundingClientRect();
     stickPtr.id = e.pointerId;
     stickPtr.cx = rect.left + rect.width / 2;
@@ -306,12 +386,14 @@ function bindStick(stick) {
   });
   stick.addEventListener('pointermove', move);
   const end = (e) => {
-    if (e.pointerId !== stickPtr.id) return;
+    if (!shouldReleaseHold(stickPtr.id === -1 ? null : stickPtr.id, eventPointerId(e), e.type)) return;
     resetStick();
   };
   stick.addEventListener('pointerup', end);
   stick.addEventListener('pointercancel', end);
   stick.addEventListener('lostpointercapture', end);
+  stick.addEventListener('touchend', end, { passive: false });
+  stick.addEventListener('touchcancel', end, { passive: false });
 }
 
 function bindMouseLook() {

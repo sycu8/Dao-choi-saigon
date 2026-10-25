@@ -15,7 +15,7 @@ import { player, toggleFly, resetPlayer, updatePlayer, requestStunt } from './ga
 import { createMissions, updateMissions, startNextMission, cancelMission, missions, save, formatMoney, LANTERN_COUNT } from './missions.js';
 import { createMinimap, updateMinimap, bearingTo } from './minimap.js';
 import { updateHud, bindButtons, setFps, setQualityLabel, setMuteLabel, setToast, setPaused, setQualityButtons, updateMissionHud, updateProgress, setStats } from './hud.js';
-import { initInput, axis, keys, updateInput, cameraLook } from './input.js';
+import { initInput, axis, keys, updateInput, cameraLook, syncTouchContext } from './input.js';
 import { initDisplay } from './display.js';
 import { settings, tier, setQuality, onQualityChange } from './settings.js';
 
@@ -287,6 +287,7 @@ function loop() {
   updateMissionHud(missions.active, objective, objective && bearingTo(player, objective.pos.x, objective.pos.z), player.altitude);
   updateMinimap(player, objective);
   updateProgress({ energy: player.energy, money: formatMoney(save.money), score: save.score });
+  syncTouchContext({ flying: player.flying, canStunt: !!models[player.carId]?.stunt });
   updateHud({
     speed: player.vel.length(),
     altitude: player.altitude,
